@@ -15,7 +15,7 @@
      - `port`: HTTP port exposed by the application and probed for reachability.
      - `template`: optional reference to a `MarketplaceTemplate` entry for pre-populated defaults.
    - Validation ensures name uniqueness, required fields, and marketplace template integrity via Prisma.
-   - The static dashboard build stores submitted templates in browser storage while the backend API is finalized, allowing operators to refine metadata without touching the database.
+   - The dashboard posts submissions to the backend service, persisting templates in Prisma so operators can reuse metadata immediately.
 
 2. **Workspace Provisioning**
    - Clone the Git repository into `/opt/dockerstore/<name>`.
@@ -36,10 +36,10 @@
    - Display a traffic-light health indicator using Prisma-tracked status enums (`RUNNING`, `STARTING`, `STOPPED`) combined with periodic port reachability checks and orchestrator health data.
 
 5. **Marketplace Reuse**
-- Completed installs can promote their metadata into `MarketplaceTemplate` records.
-- The marketplace dialog lists locally captured templates immediately and will transition to Prisma-backed data once lifecycle promotion is wired up.
-- Templates store summaries, repository URLs, default ports, GPU requirements, and refer back to the originating app when available.
-- The static dashboard preview now lets operators "Deploy" a saved template to simulate an install and visualize the fleet table before the backend is connected.
+- Completed installs can promote their metadata into `MarketplaceTemplate` records (including repository URL, start command, and port defaults).
+- The marketplace dialog lists Prisma-backed templates instantly; deploy actions call the lifecycle API to register and install apps.
+- Templates store summaries, repository URLs, start commands, default ports, GPU requirements, and refer back to the originating app when available.
+- The dashboard deploys saved templates through the backend, cloning Git repositories, pulling the NVIDIA base image, and launching Docker Compose on demand.
 
 ## Component Responsibilities
 | Component | Responsibility |

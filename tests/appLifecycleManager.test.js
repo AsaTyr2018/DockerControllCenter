@@ -15,7 +15,8 @@ test('registerApp merges marketplace template defaults when provided', async () 
         name: 'Stable Diffusion Demo',
         repositoryUrl: 'https://example.com/demo.git',
         defaultPort: 9000,
-        onboardingHints: 'GPU required.'
+        onboardingHints: 'GPU required.',
+        startCommand: 'python template.py'
       }
     ]
   });
@@ -34,6 +35,31 @@ test('registerApp merges marketplace template defaults when provided', async () 
   assert.equal(record.notes, 'GPU required.');
   assert.equal(record.startCommand, 'python app.py');
   assert.match(record.workspaceSlug, /^my-demo/);
+});
+
+test('registerApp uses template start command when payload omits one', async () => {
+  const prisma = createPrismaDouble({
+    templates: [
+      {
+        id: 'tpl-2',
+        name: 'Dreambooth Demo',
+        repositoryUrl: 'https://example.com/dream.git',
+        defaultPort: 7000,
+        startCommand: 'python template-default.py'
+      }
+    ]
+  });
+
+  const manager = new AppLifecycleManager({ prisma });
+
+  const record = await manager.registerApp({
+    name: 'Dreambooth Install',
+    templateName: 'Dreambooth Demo'
+  });
+
+  assert.equal(record.startCommand, 'python template-default.py');
+  assert.equal(record.port, 7000);
+  assert.equal(record.repositoryUrl, 'https://example.com/dream.git');
 });
 
 test('registerApp throws when workspace slug already exists', async () => {
@@ -101,9 +127,11 @@ test('installApp writes compose file and triggers docker compose', async (t) => 
   assert.match(composeContent, /services:/);
   assert.match(composeContent, /npm start/);
   assert.equal(commands[0].cmd, 'docker');
-  assert.deepEqual(commands[0].args, ['compose', '-f', result.composePath, 'up', '-d']);
-  assert.equal(commands[0].options.cwd, path.join(tempRoot, 'install-demo'));
-  assert.equal(commands[0].options.env.COMPOSE_PROJECT_NAME, 'dcc-install-demo');
+  assert.deepEqual(commands[0].args, ['pull', manager.baseImage]);
+  assert.equal(commands[1].cmd, 'docker');
+  assert.deepEqual(commands[1].args, ['compose', '-f', result.composePath, 'up', '-d']);
+  assert.equal(commands[1].options.cwd, path.join(tempRoot, 'install-demo'));
+  assert.equal(commands[1].options.env.COMPOSE_PROJECT_NAME, 'dcc-install-demo');
 
   const updatedApp = prisma.state.apps.find((app) => app.id === 'app-install');
   assert.equal(updatedApp.status, 'RUNNING');
@@ -303,9 +331,10 @@ test('reinstallApp stops the stack before reinstalling', async (t) => {
 
   await manager.reinstallApp('app-reinstall', { skipClone: true });
 
-  assert.equal(commands.length, 2);
+  assert.equal(commands.length, 3);
   assert.deepEqual(commands[0].args, ['compose', '-f', composePath, 'down', '--remove-orphans']);
-  assert.deepEqual(commands[1].args, ['compose', '-f', composePath, 'up', '-d']);
+  assert.deepEqual(commands[1].args, ['pull', 'nvcr.io/nvidia/pytorch:latest']);
+  assert.deepEqual(commands[2].args, ['compose', '-f', composePath, 'up', '-d']);
 
   const appRecord = prisma.state.apps.find((entry) => entry.id === 'app-reinstall');
   assert.equal(appRecord.status, 'RUNNING');

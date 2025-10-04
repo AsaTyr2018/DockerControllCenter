@@ -150,10 +150,12 @@ test('POST /apps/:id/install provisions the workspace and updates status', async
 
   assert.equal(installResponse.status, 200);
   assert.equal(installResponse.body.data.status, 'RUNNING');
-  assert.equal(ctx.commands.length, 1);
+  assert.equal(ctx.commands.length, 2);
   assert.equal(ctx.commands[0].cmd, 'docker');
-  assert.equal(ctx.commands[0].args[0], 'compose');
-  assert.deepEqual(ctx.commands[0].args.slice(-2), ['up', '-d']);
+  assert.deepEqual(ctx.commands[0].args, ['pull', 'nvcr.io/nvidia/pytorch:latest']);
+  assert.equal(ctx.commands[1].cmd, 'docker');
+  assert.equal(ctx.commands[1].args[0], 'compose');
+  assert.deepEqual(ctx.commands[1].args.slice(-2), ['up', '-d']);
 });
 
 test('PATCH /apps/:id/settings stores the Open App base URL and returns derived link', async (t) => {
