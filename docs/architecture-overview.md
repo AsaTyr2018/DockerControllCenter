@@ -34,7 +34,7 @@
 
 5. **Marketplace Reuse**
    - Completed installs can promote their metadata into `MarketplaceTemplate` records.
-   - The marketplace dialog surfaces seeded templates (including the Stable Diffusion demo) for rapid onboarding.
+   - The marketplace dialog lists templates created from successful installs without bundling demo data by default.
    - Templates store summaries, repository URLs, default ports, GPU requirements, and refer back to the originating app when available.
 
 ## Component Responsibilities

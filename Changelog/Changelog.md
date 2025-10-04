@@ -39,11 +39,21 @@
 **Refs:** N/A
 
 ## [2025-10-04 16:05] Introduce lifecycle manager for app onboarding
+**Change Type:** Normal Change
+**Why:** Begin implementing the documented Add App workflow by providing reusable services for validation, provisioning, and installation.
+**What changed:** Added an `AppLifecycleManager` with validation helpers, Prisma-driven registration, Git sync, and Compose generation plus Docker orchestration; extended the Prisma schema with workspace slugs and start commands; created unit tests, scripts, and documentation for the new framework.
+**Impact:** Node runtime can now register/install apps via the lifecycle manager; Prisma schema changes require running the new migration.
+**Testing:** `npm test`
+**Docs:** README.md, docs/architecture-overview.md updated.
+**Rollback Plan:** Revert the commit and drop the added Prisma migration.
+**Refs:** N/A
+
+## [2025-10-04 18:30] Clear demo seed data and add open app control
 **Change Type:** Normal Change  
-**Why:** Begin implementing the documented Add App workflow by providing reusable services for validation, provisioning, and installation.  
-**What changed:** Added an `AppLifecycleManager` with validation helpers, Prisma-driven registration, Git sync, and Compose generation plus Docker orchestration; extended the Prisma schema with workspace slugs and start commands; created unit tests, scripts, and documentation for the new framework.  
-**Impact:** Node runtime can now register/install apps via the lifecycle manager; Prisma schema changes require running the new migration.  
-**Testing:** `npm test`  
+**Why:** Allow operators to populate the system with accurate records and expose a quick link to launched apps.  
+**What changed:** Updated the Prisma seed to delete legacy demo entries without inserting new ones, refreshed the dashboard preview to highlight empty states and the new “Open App” action, and revised docs to reflect the clean-start workflow.  
+**Impact:** Running the seed now removes the old Stable Diffusion demo; UI previews show zero preloaded apps/templates and surface the Open App control.  
+**Testing:** `npm test`, `npm run build`  
 **Docs:** README.md, docs/architecture-overview.md updated.  
-**Rollback Plan:** Revert the commit and drop the added Prisma migration.  
+**Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate placeholder assets.  
 **Refs:** N/A

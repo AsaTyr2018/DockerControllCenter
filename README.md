@@ -5,7 +5,7 @@ A lightweight control plane for hosting GPU-accelerated AI applications on deman
 ## Features
 - Guided "Add App" dialog prepared for validating metadata and provisioning GPU-ready Docker Compose stacks.
 - Marketplace dialog that surfaces previously installed apps as reusable templates stored in Prisma + SQLite.
-- Application fleet table with start/stop/reinstall/deinstall controls and traffic-light health signals (red/offline, yellow/installing, green/online/port reachable).
+- Application fleet table with open-app quick links, start/stop/reinstall/deinstall controls, and traffic-light health signals (red/offline, yellow/installing, green/online/port reachable).
 - Isolated `/opt/dockerstore/<app>` workspaces mounted into containers at `/app`.
 - Node.js installer that verifies Docker, runs Prisma migrations/seeding, builds the deluxe dashboard preview, mirrors the Git checkout (including `.git`) to `/opt/dcc`, and launches the bundled dashboard server.
 - App lifecycle framework that validates onboarding payloads, derives deterministic workspace slugs, syncs Git repositories, renders Docker Compose definitions, and drives `docker compose up -d` to install workloads.
@@ -78,7 +78,7 @@ The manager enforces validation rules, derives a sanitized `workspaceSlug`, writ
 ### Database
 
 - Prisma schema lives in `prisma/schema.prisma` and targets SQLite by default.
-- Seed data (`prisma/seed.js`) provisions a **Stable Diffusion Demo** entry so the marketplace and fleet table render meaningful placeholders.
+- Seed routine (`prisma/seed.js`) now removes legacy demo entries so you always start from a clean slate before onboarding your own apps.
 - Override the `DATABASE_URL` environment variable to point at production-grade storage. The setup automation falls back to `file:/opt/dcc/data/dcc.sqlite` when none is provided.
 
 Detailed lifecycle and automation guidance lives in [`docs/architecture-overview.md`](docs/architecture-overview.md).
