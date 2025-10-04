@@ -117,3 +117,13 @@
 **Docs:** README.md updated.
 **Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate assets.
 **Refs:** N/A
+
+## [2025-10-06 09:30] Wire lifecycle controls to Docker runtime
+**Change Type:** Normal Change
+**Why:** Execute dashboard lifecycle actions against real containers instead of frontend-only simulations.
+**What changed:** Extended `AppLifecycleManager` with start/stop/restart/reinstall/deinstall helpers, updated Prisma doubles and unit tests, and refreshed documentation to describe the Docker-backed workflow.
+**Impact:** Lifecycle commands now call the Docker CLI; ensure the host has Docker installed and accessible to the service account.
+**Testing:** `npm test`
+**Docs:** README.md, docs/architecture-overview.md updated.
+**Rollback Plan:** Revert this commit.
+**Refs:** N/A

@@ -88,6 +88,32 @@ function generateComposeFile({ app, workspacePath, baseImage }) {
   return `version: '3.9'\nservices:\n  app:\n    image: ${baseImage}\n    container_name: dcc-${slug}\n    restart: unless-stopped\n    working_dir: /app\n    volumes:\n      - ${escapeForVolumeMount(workspacePath)}\n${portsBlock}${commandBlock}    deploy:\n      resources:\n        reservations:\n          devices:\n            - driver: nvidia\n              capabilities: [gpu]\n`;
 }
 
+function resolveWorkspacePaths(workspaceRoot, app) {
+  const workspaceSlug = app.workspaceSlug ?? deriveWorkspaceSlug(app.name);
+  const workspacePath = path.join(workspaceRoot, workspaceSlug);
+  const composePath = path.join(workspacePath, 'docker-compose.yaml');
+
+  return { workspaceSlug, workspacePath, composePath };
+}
+
+function resolveContainerName(app) {
+  const slug = app.workspaceSlug ?? deriveWorkspaceSlug(app.name);
+  return `dcc-${slug}`;
+}
+
+async function fetchAppOrThrow(prisma, appId) {
+  const app = await prisma.app.findUnique({ where: { id: appId } });
+
+  if (!app) {
+    throw new AppValidationError('Application not found.', {
+      field: 'appId',
+      reason: 'not-found'
+    });
+  }
+
+  return app;
+}
+
 export class AppLifecycleManager {
   constructor({
     prisma,
@@ -178,18 +204,11 @@ export class AppLifecycleManager {
   }
 
   async installApp(appId, { skipClone = false } = {}) {
-    const app = await this.prisma.app.findUnique({ where: { id: appId } });
-
-    if (!app) {
-      throw new AppValidationError('Application not found.', {
-        field: 'appId',
-        reason: 'not-found'
-      });
-    }
-
-    const workspaceSlug = app.workspaceSlug ?? deriveWorkspaceSlug(app.name);
-    const workspacePath = path.join(this.workspaceRoot, workspaceSlug);
-    const composePath = path.join(workspacePath, 'docker-compose.yaml');
+    const app = await fetchAppOrThrow(this.prisma, appId);
+    const { workspaceSlug, workspacePath, composePath } = resolveWorkspacePaths(
+      this.workspaceRoot,
+      app
+    );
 
     await this.fs.mkdir(this.workspaceRoot, { recursive: true });
     await this.prisma.app.update({
@@ -248,6 +267,202 @@ export class AppLifecycleManager {
         cause: error
       });
     }
+  }
+
+  async startApp(appId) {
+    const app = await fetchAppOrThrow(this.prisma, appId);
+    const { workspaceSlug, workspacePath, composePath } = resolveWorkspacePaths(
+      this.workspaceRoot,
+      app
+    );
+
+    const composeExists = await pathExists(this.fs, composePath);
+
+    if (!composeExists) {
+      throw new InstallationError('Docker Compose manifest not found.', {
+        composePath
+      });
+    }
+
+    const appWithSlug = { ...app, workspaceSlug };
+    const containerName = resolveContainerName(appWithSlug);
+
+    await this.commandRunner('docker', ['compose', '-f', composePath, 'up', '-d'], {
+      cwd: workspacePath,
+      env: {
+        ...process.env,
+        COMPOSE_PROJECT_NAME: containerName
+      }
+    });
+
+    await this.prisma.app.update({
+      where: { id: app.id },
+      data: {
+        status: 'RUNNING',
+        lastSeenAt: new Date(),
+        workspaceSlug
+      }
+    });
+
+    return { workspacePath, composePath };
+  }
+
+  async stopApp(appId, { removeVolumes = false } = {}) {
+    const app = await fetchAppOrThrow(this.prisma, appId);
+    const { workspaceSlug, workspacePath, composePath } = resolveWorkspacePaths(
+      this.workspaceRoot,
+      app
+    );
+
+    const composeExists = await pathExists(this.fs, composePath);
+    const appWithSlug = { ...app, workspaceSlug };
+    const containerName = resolveContainerName(appWithSlug);
+
+    if (composeExists) {
+      const args = ['compose', '-f', composePath, 'down', '--remove-orphans'];
+      if (removeVolumes) {
+        args.push('--volumes');
+      }
+
+      try {
+        await this.commandRunner('docker', args, {
+          cwd: workspacePath,
+          env: {
+            ...process.env,
+            COMPOSE_PROJECT_NAME: containerName
+          }
+        });
+      } catch (error) {
+        throw new InstallationError('Failed to stop application.', {
+          cause: error
+        });
+      }
+    } else {
+      this.logger?.warn?.(
+        `Compose manifest missing for ${app.name}; skipping docker compose down.`
+      );
+    }
+
+    await this.prisma.app.update({
+      where: { id: app.id },
+      data: {
+        status: 'STOPPED',
+        lastSeenAt: null,
+        workspaceSlug
+      }
+    });
+
+    if (this.prisma?.dockerContainerState?.upsert) {
+      await this.prisma.dockerContainerState.upsert({
+        where: { appId: app.id },
+        update: {
+          containerName,
+          status: 'STOPPED',
+          health: null,
+          state: null,
+          metrics: null,
+          lastObservedAt: new Date()
+        },
+        create: {
+          appId: app.id,
+          containerId: containerName,
+          containerName,
+          status: 'STOPPED',
+          health: null,
+          state: null,
+          metrics: null,
+          lastObservedAt: new Date()
+        }
+      });
+    }
+
+    return { workspacePath, composePath };
+  }
+
+  async restartApp(appId) {
+    const app = await fetchAppOrThrow(this.prisma, appId);
+    const { workspaceSlug, workspacePath, composePath } = resolveWorkspacePaths(
+      this.workspaceRoot,
+      app
+    );
+
+    const composeExists = await pathExists(this.fs, composePath);
+
+    if (!composeExists) {
+      throw new InstallationError('Docker Compose manifest not found.', {
+        composePath
+      });
+    }
+
+    const appWithSlug = { ...app, workspaceSlug };
+    const containerName = resolveContainerName(appWithSlug);
+
+    await this.commandRunner('docker', ['compose', '-f', composePath, 'restart'], {
+      cwd: workspacePath,
+      env: {
+        ...process.env,
+        COMPOSE_PROJECT_NAME: containerName
+      }
+    });
+
+    await this.prisma.app.update({
+      where: { id: app.id },
+      data: {
+        status: 'RUNNING',
+        lastSeenAt: new Date(),
+        workspaceSlug
+      }
+    });
+
+    return { workspacePath, composePath };
+  }
+
+  async reinstallApp(appId, { skipClone = false } = {}) {
+    try {
+      await this.stopApp(appId);
+    } catch (error) {
+      this.logger?.warn?.(`Failed to stop app ${appId} before reinstall.`, error);
+    }
+
+    return this.installApp(appId, { skipClone });
+  }
+
+  async deinstallApp(appId, { removeVolumes = true } = {}) {
+    const app = await fetchAppOrThrow(this.prisma, appId);
+    const { workspaceSlug, workspacePath, composePath } = resolveWorkspacePaths(
+      this.workspaceRoot,
+      app
+    );
+
+    try {
+      await this.stopApp(appId, { removeVolumes });
+    } catch (error) {
+      this.logger?.warn?.(`Failed to stop app ${appId} during deinstall.`, error);
+    }
+
+    if (this.prisma?.dockerContainerState?.delete) {
+      try {
+        await this.prisma.dockerContainerState.delete({ where: { appId: app.id } });
+      } catch (error) {
+        this.logger?.debug?.(
+          `No container state to delete for app ${app.id}; continuing.`,
+          error
+        );
+      }
+    }
+
+    await this.fs.rm(workspacePath, { recursive: true, force: true });
+
+    await this.prisma.app.update({
+      where: { id: app.id },
+      data: {
+        status: 'STOPPED',
+        lastSeenAt: null,
+        workspaceSlug
+      }
+    });
+
+    return { workspacePath, composePath };
   }
 
   async syncRepository(repositoryUrl, workspacePath) {
