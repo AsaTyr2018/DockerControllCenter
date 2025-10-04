@@ -7,7 +7,7 @@ A lightweight control plane for hosting GPU-accelerated AI applications on deman
 - Provision standardized NVIDIA-enabled Docker Compose stacks per application.
 - Mount isolated `/opt/dockerstore/<app>` workspaces into containers at `/app`.
 - Surface live container status and launch URLs on a responsive dashboard without manual refresh cycles.
-- Bootstrap environments with a Node.js installer that verifies Docker, builds the UX placeholder, and deploys artifacts to `/opt/dcc`.
+- Bootstrap environments with a Node.js installer that verifies Docker, builds the UX placeholder, mirrors the Git checkout (including `.git`) to `/opt/dcc`, and launches the bundled dashboard server.
 
 ## Quick Start
 ```bash
@@ -19,7 +19,7 @@ cd DockerControllCenter
 node scripts/setup.js --install
 ```
 
-Need to undo the setup? Execute `node scripts/setup.js --rollback` to restore the previous state.
+Need to undo the setup? Execute `node scripts/setup.js --rollback` to restore the previous state. The installer creates `/opt/dcc/app` for the built dashboard, `/opt/dcc/repo` with the full Git clone (ready for `git pull`), `/opt/dcc/data` for runtime files, and starts the static dashboard server on `http://localhost:${DCC_DASHBOARD_PORT:-8080}`.
 
 ## Setup Automation
 The installer orchestrates prerequisite checks, Docker package installation (via `apt-get` when

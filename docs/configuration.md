@@ -19,6 +19,12 @@ The Docker Control Center (DCC) relies on environment variables to orchestrate G
     requirements.txt (or custom name)
     docker-compose.yml (generated)
     metadata.json
+
+/opt/dcc/
+  app/   # Built dashboard assets served to operators
+  repo/  # Mirrored Git clone (with .git) for updates and maintenance
+  data/  # Runtime state and uploaded artifacts
+  logs/  # Dashboard server logs
 ```
 
 ## Networking

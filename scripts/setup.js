@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { spawnSync } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,6 +11,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const DEFAULT_INSTALL_DIR = '/opt/dcc';
 const INSTALL_DIR = process.env.DCC_INSTALL_DIR || DEFAULT_INSTALL_DIR;
 const STATE_FILE = path.join(INSTALL_DIR, '.dcc-install-state.json');
+const DASHBOARD_PORT = parseInt(process.env.DCC_DASHBOARD_PORT || '8080', 10);
 
 function usage() {
   console.log(`Docker Control Center setup\n\n` +
@@ -114,14 +115,18 @@ function backupExistingInstall(state) {
   state.previousInstallBackup = backupRoot;
 }
 
-function copyRecursive(source, destination) {
+function copyRecursive(source, destination, options = {}) {
+  const { shouldSkip } = options;
   fs.mkdirSync(destination, { recursive: true });
   const entries = fs.readdirSync(source, { withFileTypes: true });
   for (const entry of entries) {
+    if (shouldSkip && shouldSkip(source, entry)) {
+      continue;
+    }
     const srcPath = path.join(source, entry.name);
     const destPath = path.join(destination, entry.name);
     if (entry.isDirectory()) {
-      copyRecursive(srcPath, destPath);
+      copyRecursive(srcPath, destPath, options);
     } else if (entry.isSymbolicLink()) {
       const link = fs.readlinkSync(srcPath);
       fs.symlinkSync(link, destPath);
@@ -146,6 +151,76 @@ function deployArtifacts() {
   console.log(`✓ Deployed build artifacts to ${targetDir}`);
 }
 
+function syncRepositoryMirror() {
+  const repoTarget = path.join(INSTALL_DIR, 'repo');
+  if (fs.existsSync(repoTarget)) {
+    fs.rmSync(repoTarget, { recursive: true, force: true });
+  }
+
+  const skipNames = new Set(['node_modules', 'dist']);
+  copyRecursive(projectRoot, repoTarget, {
+    shouldSkip: (_source, entry) => skipNames.has(entry.name)
+  });
+
+  console.log(`✓ Repository mirror (including .git) synced to ${repoTarget}`);
+  return repoTarget;
+}
+
+function ensureRuntimeDirectories() {
+  const dataDir = path.join(INSTALL_DIR, 'data');
+  const logDir = path.join(INSTALL_DIR, 'logs');
+  fs.mkdirSync(dataDir, { recursive: true });
+  fs.mkdirSync(logDir, { recursive: true });
+  console.log(`✓ Runtime directories ready under ${INSTALL_DIR}`);
+  return { dataDir, logDir };
+}
+
+function startDashboardServer(state, repoDir, logDir) {
+  const serverScript = path.join(repoDir, 'scripts', 'serve.js');
+  if (!fs.existsSync(serverScript)) {
+    throw new Error('Dashboard server script not found. Expected scripts/serve.js in repo mirror.');
+  }
+
+  const logPath = path.join(logDir, 'dashboard.log');
+  const out = fs.openSync(logPath, 'a');
+  const err = fs.openSync(logPath, 'a');
+
+  const child = spawn('node', [serverScript, '--root', path.join(INSTALL_DIR, 'app'), '--port', String(DASHBOARD_PORT)], {
+    cwd: repoDir,
+    detached: true,
+    stdio: ['ignore', out, err],
+    env: {
+      ...process.env,
+      DCC_INSTALL_DIR: INSTALL_DIR,
+      DCC_DASHBOARD_PORT: String(DASHBOARD_PORT)
+    }
+  });
+
+  child.unref();
+  fs.closeSync(out);
+  fs.closeSync(err);
+  state.serverPid = child.pid;
+  state.serverPort = DASHBOARD_PORT;
+  state.serverLog = logPath;
+  console.log(`✓ Dashboard server started on port ${DASHBOARD_PORT} (PID ${child.pid}).`);
+}
+
+function stopExistingServer() {
+  if (!fs.existsSync(STATE_FILE)) {
+    return;
+  }
+
+  try {
+    const previous = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    if (previous.serverPid) {
+      process.kill(previous.serverPid, 'SIGTERM');
+      console.log(`↩️  Stopped previous dashboard server (PID ${previous.serverPid}).`);
+    }
+  } catch (error) {
+    console.warn('⚠️  Unable to stop previous server:', error.message);
+  }
+}
+
 function writeState(state) {
   fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
   fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
@@ -162,6 +237,15 @@ function readState() {
 function rollback() {
   console.log('🔄 Starting rollback...');
   const state = readState();
+
+  if (state.serverPid) {
+    try {
+      process.kill(state.serverPid, 'SIGTERM');
+      console.log(`🛑 Dashboard server process ${state.serverPid} terminated.`);
+    } catch (error) {
+      console.warn(`⚠️  Failed to terminate dashboard server ${state.serverPid}: ${error.message}`);
+    }
+  }
 
   if (state.installDir && state.installDir !== INSTALL_DIR) {
     console.warn(`⚠️  Install directory mismatch. State references ${state.installDir} but current configuration targets ${INSTALL_DIR}. Proceeding with current target.`);
@@ -202,8 +286,19 @@ function install() {
 
   ensureDockerAvailability(state);
   runBuildPipeline();
+  stopExistingServer();
   backupExistingInstall(state);
   deployArtifacts();
+  const repoDir = syncRepositoryMirror();
+  const runtimeDirs = ensureRuntimeDirectories();
+  state.repoDir = repoDir;
+  state.dataDir = runtimeDirs.dataDir;
+  state.logDir = runtimeDirs.logDir;
+  try {
+    startDashboardServer(state, repoDir, runtimeDirs.logDir);
+  } catch (error) {
+    console.warn(`⚠️  Dashboard server failed to start: ${error.message}`);
+  }
   writeState(state);
   console.log('✓ Install completed successfully.');
   console.log(`ℹ️  Installation directory: ${INSTALL_DIR}`);
