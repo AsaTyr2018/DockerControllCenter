@@ -1,9 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { loadConfig } from './config.js';
 import { createApiServer } from './app.js';
+import { ensureDatabaseUrl } from './database.js';
 
 async function main() {
   const config = loadConfig();
+  ensureDatabaseUrl({ logger: console });
   const prisma = new PrismaClient();
   await prisma.$connect();
 
