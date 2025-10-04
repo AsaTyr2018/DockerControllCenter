@@ -3,8 +3,8 @@
 A lightweight control plane for hosting GPU-accelerated AI applications on demand.
 
 ## Features
-- Guided "Add App" dialog prepared for validating metadata and provisioning GPU-ready Docker Compose stacks.
-- Marketplace dialog that surfaces previously installed apps as reusable templates stored in Prisma + SQLite.
+- Preview-only "Add App" dialog ready for backend validation and provisioning once the API is connected (controls currently disabled).
+- Marketplace dialog that will surface previously installed apps as reusable templates stored in Prisma + SQLite once populated (currently shows the empty state only).
 - Telemetry orchestrator that normalizes Docker runtime state, stores it in Prisma (`DockerContainerState`), and keeps marketplace entries plus container health entirely in the database.
 - Application fleet table with open-app quick links, start/stop/reinstall/deinstall controls, and traffic-light health signals (red/offline, yellow/installing, green/online/port reachable).
 - Mini settings tab persisted via `AppSettings` so operators can store custom Open App base URLs (e.g., `http://my-host`) without editing environment files.
@@ -47,9 +47,11 @@ rollback flow that removes files and Docker packages it introduced. Configure th
 > Document additional environment variables in `/docs/configuration.md` as they are introduced.
 
 ## Usage
-1. Open the dashboard and choose **Add App** to launch the registration dialog.
-2. Provide the application name, Git repository URL, container start command, and service port. Attach or reuse a marketplace template to speed up provisioning.
-3. Submit the form to trigger repository cloning into `/opt/dockerstore/<appname>` and Compose generation.
+> **Note:** The current dashboard build ships as a static preview. The Add App and Marketplace dialogs are disabled until the backend API is wired up.
+
+1. Open the dashboard and review the **Add App** preview to plan the metadata required for onboarding.
+2. Ensure your Git repository and start command are ready for when the backend integration lands.
+3. Once the API is available, submitting the form will trigger repository cloning into `/opt/dockerstore/<appname>` and Compose generation.
 4. Monitor build progress and container readiness directly in the dashboard. Status lamps turn green once the configured port responds.
 5. Promote successful installs into the marketplace dialog for future reuse.
 
@@ -63,8 +65,8 @@ import { AppLifecycleManager } from 'docker-control-center';
 const manager = new AppLifecycleManager({ prisma });
 
 const app = await manager.registerApp({
-  name: 'My Stable Diffusion',
-  repositoryUrl: 'https://github.com/example/stable-diffusion.git',
+  name: 'My GPU App',
+  repositoryUrl: 'https://github.com/example/gpu-app.git',
   startCommand: 'python launch.py --listen',
   port: 7860
 });

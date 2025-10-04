@@ -122,6 +122,23 @@ function writePlaceholderAssets() {
         box-shadow: 0 12px 30px rgba(56, 139, 253, 0.25);
       }
 
+      fieldset {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        min-inline-size: auto;
+      }
+
+      fieldset[disabled] {
+        opacity: 0.6;
+      }
+
+      .dialog__note {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
       .layout-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -497,28 +514,6 @@ function writePlaceholderAssets() {
                 </div>
               </td>
             </tr>
-            <tr>
-              <td>
-                <strong>Example GPU Inference</strong>
-                <div class="table-hint">This preview row illustrates the controls available once an app is running.</div>
-              </td>
-              <td>
-                <span class="status-pill" data-status="RUNNING">
-                  <span class="status-dot"></span>
-                  Running
-                </span>
-              </td>
-              <td>7860</td>
-              <td>Online • port reachable</td>
-              <td>
-                <div class="table-actions">
-                  <button class="primary">Open App</button>
-                  <button>Stop</button>
-                  <button>Restart</button>
-                  <button>Deinstall</button>
-                </div>
-              </td>
-            </tr>
           </tbody>
         </table>
         <p class="table-hint">Green = port reachable, Yellow = probing/compose deploy, Red = offline.</p>
@@ -534,11 +529,12 @@ function writePlaceholderAssets() {
         <div class="dialog__header">
           <div>
             <h2>Register Application</h2>
-            <p class="table-hint">Validated against Prisma before Docker Compose provisioning kicks off.</p>
+            <p class="table-hint">Preview only until the backend API is connected.</p>
           </div>
           <button value="cancel" class="secondary">Close</button>
         </div>
-        <div class="form-grid">
+        <p class="dialog__note">Form controls are disabled while Add App integration is in progress.</p>
+        <fieldset class="form-grid" disabled>
           <label>
             App Name
             <input name="name" placeholder="e.g. Stable Diffusion" required />
@@ -559,13 +555,13 @@ function writePlaceholderAssets() {
             Marketplace Template
             <select name="template">
               <option value="">Create new template</option>
-              <option value="" disabled>No saved templates yet</option>
+              <option value="" disabled>Templates appear once installs are promoted</option>
             </select>
           </label>
-        </div>
+        </fieldset>
         <div class="dialog__footer">
           <button class="secondary" value="cancel">Cancel</button>
-          <button type="submit">Schedule Install</button>
+          <button type="submit" disabled title="Add App will be enabled once the API is wired up.">Schedule Install</button>
         </div>
       </form>
     </dialog>
@@ -575,10 +571,11 @@ function writePlaceholderAssets() {
         <div class="dialog__header">
           <div>
             <h2>App Marketplace</h2>
-            <p class="table-hint">Entries originate from completed installs stored in SQLite for reuse.</p>
+            <p class="table-hint">Entries will appear after successful installs are promoted.</p>
           </div>
           <button value="cancel" class="secondary">Close</button>
         </div>
+        <p class="dialog__note">No marketplace templates exist yet. Promote an app from the dashboard once the backend ships.</p>
         <div class="marketplace-grid">
           <div class="marketplace-card">
             <div class="tag-list">
@@ -588,18 +585,10 @@ function writePlaceholderAssets() {
             <p class="table-hint">Templates appear after promoting a successfully installed app.</p>
             <button type="submit" disabled>Deploy Template</button>
           </div>
-          <div class="marketplace-card">
-            <div class="tag-list">
-              <span>Preview</span>
-            </div>
-            <h3>Example Template</h3>
-            <p class="table-hint">Once templates exist, operators can launch new installs in one click.</p>
-            <button type="submit">Deploy Template</button>
-          </div>
         </div>
         <div class="dialog__footer">
           <button class="secondary" value="cancel">Close</button>
-          <button type="submit">Add Selected</button>
+          <button type="submit" disabled title="Marketplace actions will activate with the backend.">Add Selected</button>
         </div>
       </form>
     </dialog>
