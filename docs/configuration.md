@@ -11,6 +11,7 @@ The Docker Control Center (DCC) relies on environment variables to orchestrate G
 | `DCC_REFRESH_INTERVAL` | Controls UI update cadence (e.g., websocket, SSE, polling). | Favor streaming mechanisms to avoid full page reloads. |
 | `DCC_ALLOWED_REPOS` | Optional allowlist of Git hosts or orgs. | Enforce compliance and security policies. |
 | `DCC_LOG_LEVEL` | Logging verbosity (`info`, `debug`, etc.). | Increase temporarily for troubleshooting. |
+| `DATABASE_URL` | Prisma connection string. Defaults to SQLite under `/opt/dcc/data/dcc.sqlite`. | Point at PostgreSQL/MySQL for production or keep SQLite for embedded deployments. |
 
 ## File System Layout
 ```
@@ -24,6 +25,7 @@ The Docker Control Center (DCC) relies on environment variables to orchestrate G
   app/   # Built dashboard assets served to operators
   repo/  # Mirrored Git clone (with .git) for updates and maintenance
   data/  # Runtime state and uploaded artifacts
+    dcc.sqlite  # Default Prisma SQLite database
   logs/  # Dashboard server logs
 ```
 

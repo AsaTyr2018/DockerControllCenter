@@ -8,13 +8,13 @@
 
 ## High-Level Workflow
 1. **Application Registration**
-   - User submits the onboarding form containing:
-     - `name`: unique identifier for the application.
+   - Operator opens the **Add App** dialog and submits the onboarding form containing:
+     - `name`: unique identifier for the application (persisted as `App.name`).
      - `repository`: Git URL to clone.
-     - `requirements_file`: optional override of the Python dependencies file name.
      - `start_command`: shell command executed inside the container at boot.
-     - `port`: HTTP port exposed by the application.
-   - Validation ensures name uniqueness and mandatory fields.
+     - `port`: HTTP port exposed by the application and probed for reachability.
+     - `template`: optional reference to a `MarketplaceTemplate` entry for pre-populated defaults.
+   - Validation ensures name uniqueness, required fields, and marketplace template integrity via Prisma.
 
 2. **Workspace Provisioning**
    - Clone the Git repository into `/opt/dockerstore/<name>`.
@@ -29,15 +29,21 @@
 4. **Dashboard Visibility**
    - Reflect container status changes through websockets or server-sent events to avoid full refreshes.
    - Provide quick links to the hosted application and troubleshooting logs.
-   - Support basic lifecycle actions: restart, stop, remove.
+   - Support lifecycle actions: start, stop, reinstall, deinstall, restart.
+   - Display a traffic-light health indicator using Prisma-tracked status enums (`RUNNING`, `STARTING`, `STOPPED`) combined with periodic port reachability checks.
+
+5. **Marketplace Reuse**
+   - Completed installs can promote their metadata into `MarketplaceTemplate` records.
+   - The marketplace dialog surfaces seeded templates (including the Stable Diffusion demo) for rapid onboarding.
+   - Templates store summaries, repository URLs, default ports, GPU requirements, and refer back to the originating app when available.
 
 ## Component Responsibilities
 | Component | Responsibility |
 | --- | --- |
-| Web Frontend | Responsive UI for onboarding, status, and lifecycle actions. Employs real-time updates without constant refreshes. |
-| API / Backend | Validates submissions, manages Git interactions, renders Compose templates, and tracks container lifecycle. |
-| Worker / Runner | Executes repository cloning, dependency installation, and compose orchestration with GPU support. |
-| Storage Layer | Hosts `/opt/dockerstore` directories and durable metadata (database or flat files). |
+| Web Frontend | Responsive UI for onboarding dialogs, marketplace browsing, status table, and lifecycle actions. Employs real-time updates without constant refreshes. |
+| API / Backend | Validates submissions, manages Git interactions, renders Compose templates, orchestrates lifecycle actions, and surfaces health probes. |
+| Worker / Runner | Executes repository cloning, dependency installation, compose orchestration, and port health checks with GPU support. |
+| Storage Layer | Hosts `/opt/dockerstore` directories and durable metadata (Prisma-managed SQLite by default). Stores both active apps and marketplace templates. |
 
 ## Security Considerations
 - Sanitize user-provided repository URLs and commands to prevent injection.
