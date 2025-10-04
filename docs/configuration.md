@@ -8,6 +8,9 @@ The Docker Control Center (DCC) relies on environment variables to orchestrate G
 | `DCC_INSTALL_DIR` | Target directory for setup automation deployments (`/opt/dcc` by default). | Override when `/opt` is restricted or to stage multiple environments. |
 | `DCC_BASE_IMAGE` | NVIDIA-enabled Docker image tag for generated services. | Use images compatible with the NVIDIA Container Toolkit and target CUDA version. |
 | `DCC_DASHBOARD_PORT` | Exposed HTTP port for the operator dashboard. | Configure reverse proxy if public access is required. |
+| `DCC_API_PORT` | HTTP port for the Express API (`4000` default). | Ensure the port is reachable from the dashboard/frontend. |
+| `DCC_API_CORS_ORIGIN` | Allowed CORS origin(s) for the API. | Use a comma-separated list or `*` for development. |
+| `DCC_API_AUTOSTART_TELEMETRY` | Enables background Docker telemetry polling when `true`. | Defaults to `false`; requires Docker access. |
 | `DCC_REFRESH_INTERVAL` | Controls UI update cadence (e.g., websocket, SSE, polling). | Favor streaming mechanisms to avoid full page reloads. |
 | `DCC_ALLOWED_REPOS` | Optional allowlist of Git hosts or orgs. | Enforce compliance and security policies. |
 | `DCC_LOG_LEVEL` | Logging verbosity (`info`, `debug`, etc.). | Increase temporarily for troubleshooting. |

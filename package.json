@@ -8,6 +8,7 @@
     "build": "node scripts/build.js",
     "start": "node scripts/serve.js --root dist",
     "test": "node --test",
+    "api:start": "node src/server/index.js",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed"
@@ -16,10 +17,13 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@prisma/client": "^5.16.1"
+    "@prisma/client": "^5.16.1",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
   },
   "devDependencies": {
-    "prisma": "^5.16.1"
+    "prisma": "^5.16.1",
+    "supertest": "^6.3.4"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
