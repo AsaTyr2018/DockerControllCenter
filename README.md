@@ -90,6 +90,7 @@ await orchestrator.updateOpenAppBaseUrl(app.id, 'http://edge-gateway');
 ### Database
 
 - Prisma schema lives in `prisma/schema.prisma` and targets SQLite by default.
+- Docker telemetry snapshots (`state`, `metrics`) are stored as JSON-encoded text to keep SQLite compatibility; parse before using them downstream.
 - Seed routine (`prisma/seed.js`) now removes legacy demo entries so you always start from a clean slate before onboarding your own apps.
 - Override the `DATABASE_URL` environment variable to point at production-grade storage. The setup automation falls back to `file:/opt/dcc/data/dcc.sqlite` when none is provided.
 
