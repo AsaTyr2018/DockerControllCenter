@@ -23,8 +23,20 @@ npm install
 npx prisma migrate dev --name init
 npx prisma db seed
 npm run build
+
+# Start the backend API (new terminal recommended)
+npm run api:start
+
+# Launch the dashboard preview (separate terminal)
 npm start
 ```
+
+## Backend API
+- Express-based service exposing lifecycle, telemetry, and marketplace endpoints under `http://localhost:${DCC_API_PORT:-4000}`.
+- Returns normalized Prisma records with parsed telemetry metrics and derived `openAppUrl` helpers.
+- Provides lifecycle helpers (`/apps/:id/install|start|stop|restart|reinstall`), settings updates, template CRUD, and `/telemetry/collect` for on-demand Docker polling.
+
+Refer to [`docs/api.md`](docs/api.md) for detailed request/response examples and error semantics.
 
 Need to undo the setup? Execute `node scripts/setup.js --rollback` to restore the previous state. The installer creates `/opt/dcc/app` for the built dashboard, `/opt/dcc/repo` with the full Git clone (ready for `git pull`), `/opt/dcc/data` for runtime files (including `dcc.sqlite`), runs Prisma migrations/seeding automatically, and starts the static dashboard server on `http://localhost:${DCC_DASHBOARD_PORT:-8080}`.
 
@@ -41,6 +53,9 @@ rollback flow that removes files and Docker packages it introduced. Configure th
 | `DCC_STORAGE_ROOT` | `/opt/dockerstore` | Root directory for application checkouts mounted into containers. |
 | `DCC_BASE_IMAGE` | `nvcr.io/nvidia/pytorch:latest` | GPU-enabled base image used in generated Docker Compose files. |
 | `DCC_DASHBOARD_PORT` | `8080` | HTTP port for serving the control center dashboard. |
+| `DCC_API_PORT` | `4000` | HTTP port for the Express backend API. |
+| `DCC_API_CORS_ORIGIN` | `*` | Allowed origin(s) for API CORS requests. |
+| `DCC_API_AUTOSTART_TELEMETRY` | `false` | Set to `true` to launch periodic Docker telemetry polling on boot. |
 | `DCC_REFRESH_INTERVAL` | `auto` | Frontend polling/streaming strategy; must avoid full page refresh loops. |
 | `DCC_INSTALL_DIR` | `/opt/dcc` | Target directory used by the setup automation for deploying build artifacts. |
 

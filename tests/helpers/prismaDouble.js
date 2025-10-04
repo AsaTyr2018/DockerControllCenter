@@ -103,6 +103,49 @@ export function createPrismaDouble({ apps = [], templates = [], containerStates 
       }
 
       return null;
+    },
+
+    async findMany() {
+      return state.templates.map((template) => ({ ...template }));
+    },
+
+    async create({ data }) {
+      const record = {
+        id: data.id ?? `tpl_${state.templates.length + 1}`,
+        createdAt: data.createdAt ?? new Date(),
+        updatedAt: data.updatedAt ?? new Date(),
+        ...data
+      };
+      state.templates.push(record);
+      return { ...record };
+    },
+
+    async update({ where, data }) {
+      const index = state.templates.findIndex((template) => template.id === where.id);
+
+      if (index === -1) {
+        throw new Error(`Template with id ${where.id} not found.`);
+      }
+
+      const updated = {
+        ...state.templates[index],
+        ...data,
+        updatedAt: data.updatedAt ?? new Date()
+      };
+
+      state.templates[index] = updated;
+      return { ...updated };
+    },
+
+    async delete({ where }) {
+      const index = state.templates.findIndex((template) => template.id === where.id);
+
+      if (index === -1) {
+        throw new Error(`Template with id ${where.id} not found.`);
+      }
+
+      const [removed] = state.templates.splice(index, 1);
+      return { ...removed };
     }
   };
 

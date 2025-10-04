@@ -127,3 +127,13 @@
 **Docs:** README.md, docs/architecture-overview.md updated.
 **Rollback Plan:** Revert this commit.
 **Refs:** N/A
+
+## [2025-10-06 13:00] Launch Express backend API
+**Change Type:** Normal Change  
+**Why:** Provide a real backend for the dashboard to register, install, and monitor applications.  
+**What changed:** Added an Express-based API server with lifecycle, telemetry, and marketplace routes; introduced configuration helpers, error handling, and REST documentation; updated tests with Supertest coverage.  
+**Impact:** New `npm run api:start` process exposes management endpoints on `DCC_API_PORT`; ensure Docker/Prisma connectivity before enabling auto-telemetry.  
+**Testing:** `npm test`  
+**Docs:** README.md, docs/api.md, docs/architecture-overview.md, docs/configuration.md updated.  
+**Rollback Plan:** Revert the API server commit and remove the new documentation/tests.  
+**Refs:** N/A
