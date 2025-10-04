@@ -8,16 +8,20 @@ async function main() {
     update: {
       status: 'RUNNING',
       lastSeenAt: new Date(),
-      notes: 'Demo workload reachable on the configured port for UI preview.'
+      notes: 'Demo workload reachable on the configured port for UI preview.',
+      workspaceSlug: 'stable-diffusion-demo',
+      startCommand: 'python webui.py --listen'
     },
     create: {
       name: 'Stable Diffusion Demo',
+      workspaceSlug: 'stable-diffusion-demo',
       repositoryUrl: 'https://github.com/placeholder/stable-diffusion-demo.git',
       port: 7860,
       status: 'RUNNING',
       healthEndpoint: 'http://localhost:7860/health',
       lastSeenAt: new Date(),
-      notes: 'Demo workload reachable on the configured port for UI preview.'
+      notes: 'Demo workload reachable on the configured port for UI preview.',
+      startCommand: 'python webui.py --listen'
     }
   });
 

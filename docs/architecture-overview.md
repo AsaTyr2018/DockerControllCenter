@@ -19,7 +19,7 @@
 2. **Workspace Provisioning**
    - Clone the Git repository into `/opt/dockerstore/<name>`.
    - Persist metadata (e.g., commit SHA, port, health status) for dashboard queries.
-   - Generate a Docker Compose file referencing the default NVIDIA base image and mapping `/opt/dockerstore/<name>` to `/app`.
+   - Generate a Docker Compose file referencing the default NVIDIA base image and mapping `/opt/dockerstore/<name>` to `/app`. The `AppLifecycleManager` encapsulates this logic, ensuring consistent GPU device reservations, restart policies, and deterministic workspace slugs.
 
 3. **Container Orchestration**
    - Run `docker compose up -d` for the generated stack.
@@ -42,6 +42,7 @@
 | --- | --- |
 | Web Frontend | Responsive UI for onboarding dialogs, marketplace browsing, status table, and lifecycle actions. Employs real-time updates without constant refreshes. |
 | API / Backend | Validates submissions, manages Git interactions, renders Compose templates, orchestrates lifecycle actions, and surfaces health probes. |
+| Lifecycle Manager | Node.js service (`AppLifecycleManager`) that validates inputs, derives workspace slugs, syncs Git repositories, writes Compose manifests, and executes `docker compose up -d` while updating Prisma status fields. |
 | Worker / Runner | Executes repository cloning, dependency installation, compose orchestration, and port health checks with GPU support. |
 | Storage Layer | Hosts `/opt/dockerstore` directories and durable metadata (Prisma-managed SQLite by default). Stores both active apps and marketplace templates. |
 

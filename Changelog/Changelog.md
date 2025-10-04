@@ -37,3 +37,13 @@
 **Docs:** README.md, docs/architecture-overview.md, docs/setup.md, docs/configuration.md updated.  
 **Rollback Plan:** Revert the commit and delete generated SQLite databases under `prisma/` or `/opt/dcc/data`.  
 **Refs:** N/A
+
+## [2025-10-04 16:05] Introduce lifecycle manager for app onboarding
+**Change Type:** Normal Change  
+**Why:** Begin implementing the documented Add App workflow by providing reusable services for validation, provisioning, and installation.  
+**What changed:** Added an `AppLifecycleManager` with validation helpers, Prisma-driven registration, Git sync, and Compose generation plus Docker orchestration; extended the Prisma schema with workspace slugs and start commands; created unit tests, scripts, and documentation for the new framework.  
+**Impact:** Node runtime can now register/install apps via the lifecycle manager; Prisma schema changes require running the new migration.  
+**Testing:** `npm test`  
+**Docs:** README.md, docs/architecture-overview.md updated.  
+**Rollback Plan:** Revert the commit and drop the added Prisma migration.  
+**Refs:** N/A
