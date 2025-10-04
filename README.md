@@ -5,7 +5,9 @@ A lightweight control plane for hosting GPU-accelerated AI applications on deman
 ## Features
 - Guided "Add App" dialog prepared for validating metadata and provisioning GPU-ready Docker Compose stacks.
 - Marketplace dialog that surfaces previously installed apps as reusable templates stored in Prisma + SQLite.
+- Telemetry orchestrator that normalizes Docker runtime state, stores it in Prisma (`DockerContainerState`), and keeps marketplace entries plus container health entirely in the database.
 - Application fleet table with open-app quick links, start/stop/reinstall/deinstall controls, and traffic-light health signals (red/offline, yellow/installing, green/online/port reachable).
+- Mini settings tab persisted via `AppSettings` so operators can store custom Open App base URLs (e.g., `http://my-host`) without editing environment files.
 - Isolated `/opt/dockerstore/<app>` workspaces mounted into containers at `/app`.
 - Node.js installer that verifies Docker, runs Prisma migrations/seeding, builds the deluxe dashboard preview, mirrors the Git checkout (including `.git`) to `/opt/dcc`, and launches the bundled dashboard server.
 - App lifecycle framework that validates onboarding payloads, derives deterministic workspace slugs, syncs Git repositories, renders Docker Compose definitions, and drives `docker compose up -d` to install workloads.
@@ -15,9 +17,6 @@ A lightweight control plane for hosting GPU-accelerated AI applications on deman
 # Clone the repository and move into it
 git clone https://github.com/example/DockerControllCenter.git
 cd DockerControllCenter
-
-# Prepare environment variables for Prisma
-cp .env.example .env
 
 # Install dependencies and set up the database + deluxe dashboard preview
 npm install
@@ -74,6 +73,19 @@ await manager.installApp(app.id);
 ```
 
 The manager enforces validation rules, derives a sanitized `workspaceSlug`, writes a GPU-ready Compose file under `/opt/dockerstore/<slug>/docker-compose.yaml`, and executes `docker compose up -d` to provision the service.
+
+The `DockerOrchestrator` keeps the dashboard informed without additional configuration files by persisting telemetry snapshots to Prisma and managing Open App links.
+
+```js
+import { DockerOrchestrator } from 'docker-control-center';
+
+const orchestrator = new DockerOrchestrator({ prisma });
+
+await orchestrator.collectTelemetry();
+await orchestrator.updateOpenAppBaseUrl(app.id, 'http://edge-gateway');
+```
+
+`collectTelemetry()` polls Docker (`ps`, `inspect`, `stats`) and stores normalized results in the `DockerContainerState` table while updating app statuses. `updateOpenAppBaseUrl()` persists operator-provided hosts so the UI can build `http://host:port` launch links purely from database data.
 
 ### Database
 

@@ -6,3 +6,4 @@ export {
   normalizeName,
   validateRegistrationPayload
 } from './framework/validation.js';
+export { DockerOrchestrator, createDockerOrchestrator } from './framework/dockerOrchestrator.js';

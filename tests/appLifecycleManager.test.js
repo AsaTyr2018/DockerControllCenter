@@ -5,85 +5,11 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { AppLifecycleManager } from '../src/framework/appLifecycleManager.js';
 import { AppValidationError } from '../src/framework/errors.js';
-
-function createPrismaDouble(initialApps = [], templates = []) {
-  const state = {
-    apps: initialApps.map((app) => ({ ...app })),
-    templates: templates.map((template) => ({ ...template }))
-  };
-
-  const appModel = {
-    async findUnique({ where }) {
-      if (where.id) {
-        return state.apps.find((app) => app.id === where.id) ?? null;
-      }
-
-      if (where.name) {
-        return state.apps.find((app) => app.name === where.name) ?? null;
-      }
-
-      if (where.workspaceSlug) {
-        return state.apps.find((app) => app.workspaceSlug === where.workspaceSlug) ?? null;
-      }
-
-      return null;
-    },
-
-    async create({ data }) {
-      const record = {
-        id: data.id ?? `app_${state.apps.length + 1}`,
-        createdAt: data.createdAt ?? new Date(),
-        updatedAt: data.updatedAt ?? new Date(),
-        status: data.status ?? 'STOPPED',
-        lastSeenAt: data.lastSeenAt ?? null,
-        ...data
-      };
-      state.apps.push(record);
-      return { ...record };
-    },
-
-    async update({ where, data }) {
-      const index = state.apps.findIndex((app) => app.id === where.id);
-
-      if (index === -1) {
-        throw new Error(`App with id ${where.id} not found.`);
-      }
-
-      const updated = {
-        ...state.apps[index],
-        ...data,
-        updatedAt: data.updatedAt ?? new Date()
-      };
-      state.apps[index] = updated;
-      return { ...updated };
-    }
-  };
-
-  const marketplaceTemplateModel = {
-    async findUnique({ where }) {
-      if (where.id) {
-        return state.templates.find((template) => template.id === where.id) ?? null;
-      }
-
-      if (where.name) {
-        return state.templates.find((template) => template.name === where.name) ?? null;
-      }
-
-      return null;
-    }
-  };
-
-  return {
-    state,
-    app: appModel,
-    marketplaceTemplate: marketplaceTemplateModel
-  };
-}
+import { createPrismaDouble } from './helpers/prismaDouble.js';
 
 test('registerApp merges marketplace template defaults when provided', async () => {
-  const prisma = createPrismaDouble(
-    [],
-    [
+  const prisma = createPrismaDouble({
+    templates: [
       {
         id: 'tpl-1',
         name: 'Stable Diffusion Demo',
@@ -92,7 +18,7 @@ test('registerApp merges marketplace template defaults when provided', async () 
         onboardingHints: 'GPU required.'
       }
     ]
-  );
+  });
 
   const manager = new AppLifecycleManager({ prisma });
 
@@ -111,14 +37,16 @@ test('registerApp merges marketplace template defaults when provided', async () 
 });
 
 test('registerApp throws when workspace slug already exists', async () => {
-  const prisma = createPrismaDouble([
-    {
-      id: 'existing',
-      name: 'Test App',
-      workspaceSlug: 'test-app',
-      status: 'STOPPED'
-    }
-  ]);
+  const prisma = createPrismaDouble({
+    apps: [
+      {
+        id: 'existing',
+        name: 'Test App',
+        workspaceSlug: 'test-app',
+        status: 'STOPPED'
+      }
+    ]
+  });
 
   const manager = new AppLifecycleManager({ prisma });
 
@@ -141,17 +69,19 @@ test('installApp writes compose file and triggers docker compose', async (t) => 
     await fs.rm(tempRoot, { recursive: true, force: true });
   });
 
-  const prisma = createPrismaDouble([
-    {
-      id: 'app-install',
-      name: 'Install Demo',
-      workspaceSlug: 'install-demo',
-      repositoryUrl: null,
-      port: 8080,
-      status: 'STOPPED',
-      startCommand: 'npm start'
-    }
-  ]);
+  const prisma = createPrismaDouble({
+    apps: [
+      {
+        id: 'app-install',
+        name: 'Install Demo',
+        workspaceSlug: 'install-demo',
+        repositoryUrl: null,
+        port: 8080,
+        status: 'STOPPED',
+        startCommand: 'npm start'
+      }
+    ]
+  });
 
   const commands = [];
 

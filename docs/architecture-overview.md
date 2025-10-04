@@ -26,11 +26,13 @@
    - Monitor container logs, GPU resource allocation, and health checks.
    - Expose the configured port on the host, optionally with HTTPS termination upstream.
 
-4. **Dashboard Visibility**
-   - Reflect container status changes through websockets or server-sent events to avoid full refreshes.
-   - Provide quick links to the hosted application and troubleshooting logs.
+4. **Telemetry + Dashboard Visibility**
+   - The `DockerOrchestrator` polls `docker ps`, `docker inspect`, and `docker stats` to capture runtime state for each managed container.
+   - Telemetry snapshots are persisted through Prisma's `DockerContainerState` model so dashboard consumers read from the central database instead of environment files.
+   - App records receive status updates (e.g., `RUNNING`, `FAILED`, `STOPPED`) and `lastSeenAt` timestamps whenever telemetry cycles complete.
+   - Provide quick links to the hosted application and troubleshooting logs, including custom “Open App” URLs sourced from the database-backed `AppSettings` model.
    - Support lifecycle actions: start, stop, reinstall, deinstall, restart.
-   - Display a traffic-light health indicator using Prisma-tracked status enums (`RUNNING`, `STARTING`, `STOPPED`) combined with periodic port reachability checks.
+   - Display a traffic-light health indicator using Prisma-tracked status enums (`RUNNING`, `STARTING`, `STOPPED`) combined with periodic port reachability checks and orchestrator health data.
 
 5. **Marketplace Reuse**
    - Completed installs can promote their metadata into `MarketplaceTemplate` records.
@@ -43,6 +45,7 @@
 | Web Frontend | Responsive UI for onboarding dialogs, marketplace browsing, status table, and lifecycle actions. Employs real-time updates without constant refreshes. |
 | API / Backend | Validates submissions, manages Git interactions, renders Compose templates, orchestrates lifecycle actions, and surfaces health probes. |
 | Lifecycle Manager | Node.js service (`AppLifecycleManager`) that validates inputs, derives workspace slugs, syncs Git repositories, writes Compose manifests, and executes `docker compose up -d` while updating Prisma status fields. |
+| Telemetry Orchestrator | Background service (`DockerOrchestrator`) that polls Docker, stores normalized telemetry in `DockerContainerState`, and hydrates dashboard-ready payloads including "Open App" URLs from `AppSettings`. |
 | Worker / Runner | Executes repository cloning, dependency installation, compose orchestration, and port health checks with GPU support. |
 | Storage Layer | Hosts `/opt/dockerstore` directories and durable metadata (Prisma-managed SQLite by default). Stores both active apps and marketplace templates. |
 
