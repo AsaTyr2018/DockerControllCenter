@@ -137,3 +137,13 @@
 **Docs:** README.md, docs/api.md, docs/architecture-overview.md, docs/configuration.md updated.  
 **Rollback Plan:** Revert the API server commit and remove the new documentation/tests.  
 **Refs:** N/A
+
+## [2025-10-06 18:00] Connect dashboard marketplace to backend deployments
+**Change Type:** Normal Change  
+**Why:** Ensure new applications created via the UI install through Docker with the NVIDIA base image and Git checkout.  
+**What changed:** Wired the dashboard to the Express API for template CRUD and app lifecycle actions, added Docker image pulls to `installApp`, persisted marketplace start commands, refreshed build assets, and updated docs to describe the backend-powered flow.  
+**Impact:** Deploy, start, stop, and reinstall actions now execute against Docker; the UI no longer relies on local storage. Operators must run the API with Docker access so image pulls and git clones succeed.  
+**Testing:** `npm run build`, `npm test`  
+**Docs:** README.md, docs/api.md, docs/architecture-overview.md updated.  
+**Rollback Plan:** Revert this change set and rerun `npm run build` to regenerate the previous static assets.  
+**Refs:** N/A

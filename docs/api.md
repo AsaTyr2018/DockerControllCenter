@@ -120,6 +120,20 @@ an RFC-7807 style structure:
 | `PATCH` | `/templates/:id` | Update a template. |
 | `DELETE` | `/templates/:id` | Delete a template. |
 
+**Request Body – `POST /templates`**
+
+```json
+{
+  "name": "Stable Diffusion",
+  "repositoryUrl": "https://github.com/example/stable-diffusion.git",
+  "startCommand": "python launch.py --listen",
+  "defaultPort": 7860
+}
+```
+
+Templates persist inside Prisma and power the dashboard marketplace. Deploying a template from the UI calls `POST /apps` with
+`install: true`, reuses the template metadata, and immediately starts the lifecycle workflow.
+
 ### Telemetry
 
 | Method | Path | Description |
@@ -139,4 +153,6 @@ The server can also auto-start periodic polling when `DCC_API_AUTOSTART_TELEMETR
 - The API reuses the Prisma client; ensure `DATABASE_URL` points to a migrated schema.
 - All lifecycle endpoints ultimately shell out to Docker; run the API with the necessary
   permissions (e.g., rootless Docker group membership).
+- Install operations run `docker pull ${DCC_BASE_IMAGE}` before `docker compose up -d` to make sure the NVIDIA base image is
+  available locally.
 - Wrap the service in an authenticating proxy before exposing it to untrusted networks.

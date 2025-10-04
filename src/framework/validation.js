@@ -123,6 +123,7 @@ export function mergeTemplateDefaults(template, payload) {
     ...payload,
     repositoryUrl: payload.repositoryUrl ?? template.repositoryUrl ?? null,
     port: payload.port ?? template.defaultPort ?? null,
+    startCommand: payload.startCommand ?? template.startCommand ?? null,
     notes: payload.notes ?? template.onboardingHints ?? null
   };
 }

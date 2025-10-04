@@ -3,8 +3,8 @@
 A lightweight control plane for hosting GPU-accelerated AI applications on demand.
 
 ## Features
-- Interactive "Add App" dialog that saves onboarding metadata as reusable marketplace templates in the browser until the backend API is connected.
-- Marketplace dialog with local templates that can be deployed (green play), edited (blue **E**), or terminated (red **X**) before backend persistence arrives.
+- Interactive "Add App" dialog that persists onboarding metadata to the backend marketplace and can immediately trigger installs through the lifecycle API.
+- Marketplace dialog backed by Prisma templates that can be deployed (green play), edited (blue **E**), or terminated (red **X**) via the API.
 - Telemetry orchestrator that normalizes Docker runtime state, stores it in Prisma (`DockerContainerState`), and keeps marketplace entries plus container health entirely in the database.
 - Application fleet table with open-app quick links, start/stop/reinstall/deinstall controls, and traffic-light health signals (red/offline, yellow/installing, green/online/port reachable).
 - Mini settings tab persisted via `AppSettings` so operators can store custom Open App base URLs (e.g., `http://my-host`) without editing environment files.
@@ -62,11 +62,11 @@ rollback flow that removes files and Docker packages it introduced. Configure th
 > Document additional environment variables in `/docs/configuration.md` as they are introduced.
 
 ## Usage
-1. Open the dashboard and use **Add App** to capture app metadata; entries persist in browser storage and populate the marketplace dialog instantly.
-2. Launch saved templates with the green **Deploy** action, edit them via the blue **E**, or remove them with the red **X**. Deployed templates now populate the fleet table to simulate an install until the backend arrives.
-3. Once the API is available, submitting the form will trigger repository cloning into `/opt/dockerstore/<appname>` and Compose generation.
-4. Monitor build progress and container readiness directly in the dashboard. Lifecycle controls (Start, Stop, Restart, Reinstall, Deinstall) now invoke the backend `AppLifecycleManager`, which shells out to Docker to operate on each app's Compose stack while status lamps track progress (green = reachable).
-5. Promote successful installs into the marketplace dialog for future reuse.
+1. Open the dashboard and use **Add App** to capture app metadata; submissions create or update Prisma-backed marketplace templates.
+2. Launch saved templates with the green **Deploy** action to register an app, clone its Git repository, pull the NVIDIA base image, and bring the Compose stack online. Edit templates with the blue **E** or remove them with the red **X**.
+3. Monitor install progress and container readiness directly in the dashboard; telemetry snapshots and lifecycle controls stay in sync with Docker.
+4. Use lifecycle controls (Start, Stop, Restart, Reinstall, Deinstall) to operate each Compose stack via the backend `AppLifecycleManager`; status lamps reflect Docker health (green = reachable).
+5. Promote successful installs into the marketplace dialog for future reuse—the templates remain in Prisma for one-click redeploys.
 
 ### Programmatic API
 

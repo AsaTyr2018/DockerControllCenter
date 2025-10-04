@@ -32,6 +32,7 @@ model MarketplaceTemplate {
   summary         String?
   repositoryUrl   String?
   defaultPort     Int?
+  startCommand    String?
   preferredGpu    String?
   onboardingHints String?
   sourceAppId     String?    @unique

@@ -234,6 +234,8 @@ export class AppLifecycleManager {
 
       await this.fs.writeFile(composePath, composeContent, 'utf8');
 
+      await this.commandRunner('docker', ['pull', this.baseImage]);
+
       await this.commandRunner('docker', ['compose', '-f', composePath, 'up', '-d'], {
         cwd: workspacePath,
         env: {
