@@ -3,8 +3,8 @@
 A lightweight control plane for hosting GPU-accelerated AI applications on demand.
 
 ## Features
-- Preview-only "Add App" dialog ready for backend validation and provisioning once the API is connected (controls currently disabled).
-- Marketplace dialog that will surface previously installed apps as reusable templates stored in Prisma + SQLite once populated (currently shows the empty state only).
+- Interactive "Add App" dialog that saves onboarding metadata as reusable marketplace templates in the browser until the backend API is connected.
+- Marketplace dialog with local templates that can be edited (blue **E**) or terminated (red **X**) before backend persistence arrives.
 - Telemetry orchestrator that normalizes Docker runtime state, stores it in Prisma (`DockerContainerState`), and keeps marketplace entries plus container health entirely in the database.
 - Application fleet table with open-app quick links, start/stop/reinstall/deinstall controls, and traffic-light health signals (red/offline, yellow/installing, green/online/port reachable).
 - Mini settings tab persisted via `AppSettings` so operators can store custom Open App base URLs (e.g., `http://my-host`) without editing environment files.
@@ -47,10 +47,8 @@ rollback flow that removes files and Docker packages it introduced. Configure th
 > Document additional environment variables in `/docs/configuration.md` as they are introduced.
 
 ## Usage
-> **Note:** The current dashboard build ships as a static preview. The Add App and Marketplace dialogs are disabled until the backend API is wired up.
-
-1. Open the dashboard and review the **Add App** preview to plan the metadata required for onboarding.
-2. Ensure your Git repository and start command are ready for when the backend integration lands.
+1. Open the dashboard and use **Add App** to capture app metadata; entries persist in browser storage and populate the marketplace dialog instantly.
+2. Edit saved templates via the blue **E** action or remove them with the red **X** while waiting for the backend rollout.
 3. Once the API is available, submitting the form will trigger repository cloning into `/opt/dockerstore/<appname>` and Compose generation.
 4. Monitor build progress and container readiness directly in the dashboard. Status lamps turn green once the configured port responds.
 5. Promote successful installs into the marketplace dialog for future reuse.

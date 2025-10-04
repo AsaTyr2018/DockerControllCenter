@@ -15,7 +15,7 @@
      - `port`: HTTP port exposed by the application and probed for reachability.
      - `template`: optional reference to a `MarketplaceTemplate` entry for pre-populated defaults.
    - Validation ensures name uniqueness, required fields, and marketplace template integrity via Prisma.
-   - The placeholder dashboard keeps the controls disabled until the backend API is connected, preventing the old demo workflow from appearing functional.
+   - The static dashboard build stores submitted templates in browser storage while the backend API is finalized, allowing operators to refine metadata without touching the database.
 
 2. **Workspace Provisioning**
    - Clone the Git repository into `/opt/dockerstore/<name>`.
@@ -37,7 +37,7 @@
 
 5. **Marketplace Reuse**
    - Completed installs can promote their metadata into `MarketplaceTemplate` records.
-   - The marketplace dialog lists templates created from successful installs without bundling demo data by default.
+   - The marketplace dialog lists locally captured templates immediately and will transition to Prisma-backed data once lifecycle promotion is wired up.
    - Templates store summaries, repository URLs, default ports, GPU requirements, and refer back to the originating app when available.
 
 ## Component Responsibilities

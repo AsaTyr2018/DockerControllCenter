@@ -372,6 +372,44 @@ function writePlaceholderAssets() {
         font-size: 1.1rem;
       }
 
+      .marketplace-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .marketplace-actions button {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: rgba(240, 246, 252, 0.12);
+        color: inherit;
+        padding: 0.45rem 0.6rem;
+        cursor: pointer;
+      }
+
+      .marketplace-actions button:hover {
+        background: rgba(240, 246, 252, 0.2);
+      }
+
+      .marketplace-actions button[data-action='edit'] {
+        border-color: rgba(68, 174, 255, 0.5);
+        color: rgb(68, 174, 255);
+      }
+
+      .marketplace-actions button[data-action='terminate'] {
+        border-color: rgba(255, 68, 68, 0.5);
+        color: rgb(255, 107, 107);
+      }
+
+      .marketplace-actions svg {
+        width: 0.75rem;
+        height: 0.75rem;
+      }
+
       .tag-list {
         display: flex;
         gap: 0.5rem;
@@ -525,16 +563,15 @@ function writePlaceholderAssets() {
     </div>
 
     <dialog data-dialog-id="add-app">
-      <form method="dialog" class="dialog__card">
+      <form class="dialog__card">
         <div class="dialog__header">
           <div>
             <h2>Register Application</h2>
-            <p class="table-hint">Preview only until the backend API is connected.</p>
+            <p class="table-hint">Store reusable launch settings locally until the backend API ships.</p>
           </div>
           <button value="cancel" class="secondary">Close</button>
         </div>
-        <p class="dialog__note">Form controls are disabled while Add App integration is in progress.</p>
-        <fieldset class="form-grid" disabled>
+        <fieldset class="form-grid">
           <label>
             App Name
             <input name="name" placeholder="e.g. Stable Diffusion" required />
@@ -555,13 +592,12 @@ function writePlaceholderAssets() {
             Marketplace Template
             <select name="template">
               <option value="">Create new template</option>
-              <option value="" disabled>Templates appear once installs are promoted</option>
             </select>
           </label>
         </fieldset>
         <div class="dialog__footer">
           <button class="secondary" value="cancel">Cancel</button>
-          <button type="submit" disabled title="Add App will be enabled once the API is wired up.">Schedule Install</button>
+          <button type="submit">Save to Marketplace</button>
         </div>
       </form>
     </dialog>
@@ -571,30 +607,220 @@ function writePlaceholderAssets() {
         <div class="dialog__header">
           <div>
             <h2>App Marketplace</h2>
-            <p class="table-hint">Entries will appear after successful installs are promoted.</p>
+            <p class="table-hint">Templates persist locally until the lifecycle backend is connected.</p>
           </div>
           <button value="cancel" class="secondary">Close</button>
         </div>
-        <p class="dialog__note">No marketplace templates exist yet. Promote an app from the dashboard once the backend ships.</p>
-        <div class="marketplace-grid">
-          <div class="marketplace-card">
+        <div class="marketplace-grid" data-marketplace-grid>
+          <div class="marketplace-card" data-empty-state>
             <div class="tag-list">
               <span>Empty</span>
             </div>
             <h3>No templates yet</h3>
-            <p class="table-hint">Templates appear after promoting a successfully installed app.</p>
-            <button type="submit" disabled>Deploy Template</button>
+            <p class="table-hint">Use Add App to store launch settings locally.</p>
+            <button type="button" disabled>Deploy Template</button>
           </div>
         </div>
         <div class="dialog__footer">
           <button class="secondary" value="cancel">Close</button>
-          <button type="submit" disabled title="Marketplace actions will activate with the backend.">Add Selected</button>
         </div>
       </form>
     </dialog>
 
     <script>
       (function () {
+        const STORAGE_KEY = 'dcc.marketplaceTemplates';
+        const addAppDialog = document.querySelector('[data-dialog-id="add-app"]');
+        const marketplaceDialog = document.querySelector('[data-dialog-id="marketplace"]');
+        const addAppForm = addAppDialog.querySelector('form');
+        const marketplaceGrid = marketplaceDialog.querySelector('[data-marketplace-grid]');
+        const templateSelect = addAppForm.querySelector('select[name="template"]');
+        let editingId = null;
+
+        const generateId = () => {
+          if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID();
+          }
+          return 'template-' + Date.now().toString(16) + '-' + Math.random().toString(16).slice(2);
+        };
+
+        const safeParse = (value) => {
+          if (!value) return [];
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (error) {
+            console.warn('Failed to parse stored marketplace templates.', error);
+            return [];
+          }
+        };
+
+        const loadTemplates = () => safeParse(localStorage.getItem(STORAGE_KEY));
+
+        const saveTemplates = (templates) => {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+        };
+
+        const createActionButton = (action, label, iconPath) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.dataset.action = action;
+          button.innerHTML =
+            '<svg viewBox="0 0 16 16" aria-hidden="true">' +
+            '<path fill="currentColor" d="' +
+            iconPath +
+            '" />' +
+            '</svg>' +
+            '<span>' +
+            label +
+            '</span>';
+          return button;
+        };
+
+        const renderTemplateOptions = (templates) => {
+          templateSelect
+            .querySelectorAll('[data-dynamic-option]')
+            .forEach((option) => option.remove());
+          templates.forEach((template) => {
+            const option = document.createElement('option');
+            option.value = template.id;
+            option.textContent = template.name;
+            option.dataset.dynamicOption = 'true';
+            templateSelect.appendChild(option);
+          });
+        };
+
+        const renderMarketplace = (templates) => {
+          marketplaceGrid
+            .querySelectorAll('[data-template-card]')
+            .forEach((card) => card.remove());
+          const emptyState = marketplaceGrid.querySelector('[data-empty-state]');
+          if (templates.length === 0) {
+            emptyState.hidden = false;
+            return;
+          }
+          emptyState.hidden = true;
+
+          templates.forEach((template) => {
+            const card = document.createElement('div');
+            card.className = 'marketplace-card';
+            card.dataset.templateCard = 'true';
+            card.dataset.templateId = template.id;
+
+            const tags = document.createElement('div');
+            tags.className = 'tag-list';
+            const tag = document.createElement('span');
+            tag.textContent = template.port ? 'Port ' + template.port : 'No Port';
+            tags.appendChild(tag);
+            card.appendChild(tags);
+
+            const title = document.createElement('h3');
+            title.textContent = template.name;
+            card.appendChild(title);
+
+            if (template.repository) {
+              const repo = document.createElement('p');
+              repo.className = 'table-hint';
+              repo.textContent = template.repository;
+              card.appendChild(repo);
+            }
+
+            if (template.startCommand) {
+              const start = document.createElement('p');
+              start.textContent = template.startCommand;
+              card.appendChild(start);
+            }
+
+            const actions = document.createElement('div');
+            actions.className = 'marketplace-actions';
+            const editButton = createActionButton(
+              'edit',
+              'Edit',
+              'M3 2.5a.5.5 0 0 1 .5-.5h2.086a.5.5 0 0 1 .354.146l7.414 7.414a.5.5 0 0 1 0 .707l-2.086 2.086a.5.5 0 0 1-.707 0L3.147 4.939A.5.5 0 0 1 3 4.586V2.5zm-.5-.5A1.5 1.5 0 0 0 1 3.5v2.086a1.5 1.5 0 0 0 .44 1.06l7.414 7.414a1.5 1.5 0 0 0 2.122 0l2.086-2.086a1.5 1.5 0 0 0 0-2.122L5.647 1.44A1.5 1.5 0 0 0 4.586 1H2.5z'
+            );
+            const terminateButton = createActionButton(
+              'terminate',
+              'Terminate',
+              'M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 0 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 1 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z'
+            );
+            actions.appendChild(editButton);
+            actions.appendChild(terminateButton);
+            card.appendChild(actions);
+
+            editButton.addEventListener('click', () => {
+              editingId = template.id;
+              addAppForm.name.value = template.name;
+              addAppForm.repository.value = template.repository || '';
+              addAppForm.startCommand.value = template.startCommand || '';
+              addAppForm.port.value = template.port || '';
+              addAppForm.template.value = template.template || '';
+              addAppDialog.showModal();
+              addAppDialog.dataset.mode = 'edit';
+            });
+
+            terminateButton.addEventListener('click', () => {
+              const nextTemplates = loadTemplates().filter((item) => item.id !== template.id);
+              saveTemplates(nextTemplates);
+              renderMarketplace(nextTemplates);
+              renderTemplateOptions(nextTemplates);
+            });
+
+            marketplaceGrid.appendChild(card);
+          });
+        };
+
+        const resetForm = () => {
+          addAppForm.reset();
+          editingId = null;
+          delete addAppDialog.dataset.mode;
+        };
+
+        addAppForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const formData = new FormData(addAppForm);
+          const template = {
+            id: editingId || generateId(),
+            name: formData.get('name').trim(),
+            repository: formData.get('repository').trim(),
+            startCommand: formData.get('startCommand').trim(),
+            port: formData.get('port').trim(),
+            template: formData.get('template'),
+            updatedAt: new Date().toISOString()
+          };
+
+          const templates = loadTemplates();
+          const existingIndex = templates.findIndex((item) => item.id === template.id);
+          if (existingIndex >= 0) {
+            templates.splice(existingIndex, 1, template);
+          } else {
+            templates.push(template);
+          }
+
+          saveTemplates(templates);
+          renderMarketplace(templates);
+          renderTemplateOptions(templates);
+          addAppDialog.close('submit');
+          resetForm();
+        });
+
+        addAppDialog.addEventListener('close', () => {
+          if (addAppDialog.returnValue !== 'submit') {
+            resetForm();
+          }
+        });
+
+        marketplaceDialog.addEventListener('close', () => {
+          marketplaceDialog.returnValue = '';
+        });
+
+        const bootstrap = () => {
+          const templates = loadTemplates();
+          renderMarketplace(templates);
+          renderTemplateOptions(templates);
+        };
+
+        bootstrap();
+
         const backdropClose = (dialog, event) => {
           const rect = dialog.getBoundingClientRect();
           const withinX = event.clientX >= rect.left && event.clientX <= rect.right;
