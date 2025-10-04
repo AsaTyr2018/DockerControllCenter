@@ -82,6 +82,20 @@ function sanitizeMetrics(entry) {
   };
 }
 
+function serializeNullableJson(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch (error) {
+    const failure = new Error('Failed to serialize telemetry payload.');
+    failure.cause = error;
+    throw failure;
+  }
+}
+
 function createDefaultRunner(logger) {
   return (command, args = [], options = {}) =>
     new Promise((resolve, reject) => {
@@ -248,8 +262,8 @@ export class DockerOrchestrator {
         containerName,
         status,
         health,
-        state: inspectData?.State ?? null,
-        metrics,
+        state: serializeNullableJson(inspectData?.State ?? null),
+        metrics: serializeNullableJson(metrics),
         lastObservedAt: new Date()
       };
 

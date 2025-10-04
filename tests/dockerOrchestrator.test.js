@@ -90,7 +90,10 @@ test('collectTelemetry persists container state and metrics', async () => {
   assert.ok(stateRecord, 'container state should be stored');
   assert.equal(stateRecord.status, 'RUNNING');
   assert.equal(stateRecord.health, 'HEALTHY');
-  assert.equal(stateRecord.metrics.cpuPercent, 12.5);
+  const storedMetrics = JSON.parse(stateRecord.metrics);
+  assert.equal(storedMetrics.cpuPercent, 12.5);
+  const storedState = JSON.parse(stateRecord.state);
+  assert.equal(storedState.Status, 'running');
 
   const appRecord = prisma.state.apps.find((entry) => entry.id === 'app-1');
   assert.equal(appRecord.status, 'RUNNING');

@@ -56,8 +56,8 @@ model DockerContainerState {
   containerName  String
   status         String
   health         String?
-  state          Json?
-  metrics        Json?
+  state          String?
+  metrics        String?
   lastObservedAt DateTime @default(now())
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

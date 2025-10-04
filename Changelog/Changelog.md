@@ -59,11 +59,21 @@
 **Refs:** N/A
 
 ## [2025-10-04 19:30] Add Docker orchestrator telemetry and settings persistence
-**Change Type:** Normal Change  
-**Why:** Provide database-backed container telemetry and configurable Open App URLs without relying on environment files.  
-**What changed:** Introduced a `DockerOrchestrator` service with tests, expanded the Prisma schema (AppSettings, DockerContainerState, openAppBaseUrl), added migrations/seeds, and updated docs plus README to describe telemetry, marketplace persistence, and the mini settings tab.  
-**Impact:** Requires running the new Prisma migration; telemetry and custom host links now persist in the database.  
-**Testing:** `npm test`  
-**Docs:** README.md, docs/architecture-overview.md, docs/configuration.md updated.  
-**Rollback Plan:** Revert the commit and roll back Prisma migration `20251004190000_add_docker_orchestrator`.  
+**Change Type:** Normal Change
+**Why:** Provide database-backed container telemetry and configurable Open App URLs without relying on environment files.
+**What changed:** Introduced a `DockerOrchestrator` service with tests, expanded the Prisma schema (AppSettings, DockerContainerState, openAppBaseUrl), added migrations/seeds, and updated docs plus README to describe telemetry, marketplace persistence, and the mini settings tab.
+**Impact:** Requires running the new Prisma migration; telemetry and custom host links now persist in the database.
+**Testing:** `npm test`
+**Docs:** README.md, docs/architecture-overview.md, docs/configuration.md updated.
+**Rollback Plan:** Revert the commit and roll back Prisma migration `20251004190000_add_docker_orchestrator`.
+**Refs:** N/A
+
+## [2025-10-04 21:10] Fix SQLite schema JSON validation failure
+**Change Type:** Standard Change
+**Why:** Prisma install failed because the SQLite connector does not support `Json` columns in the schema.
+**What changed:** Aligned `DockerContainerState.state` and `metrics` fields with the existing TEXT columns, added serialization helpers, updated tests, and documented the JSON encoding approach.
+**Impact:** No migration required; telemetry payloads continue to persist as JSON strings.
+**Testing:** `npm test`
+**Docs:** README.md updated.
+**Rollback Plan:** Revert this commit.
 **Refs:** N/A
