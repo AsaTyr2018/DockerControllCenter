@@ -5,6 +5,7 @@ The Docker Control Center (DCC) relies on environment variables to orchestrate G
 | Variable | Purpose | Notes |
 | --- | --- | --- |
 | `DCC_STORAGE_ROOT` | Directory hosting application workspaces (`/opt/dockerstore` by default). | Must be writable by the DCC runtime and large enough to store cloned repositories and generated artifacts. |
+| `DCC_INSTALL_DIR` | Target directory for setup automation deployments (`/opt/dcc` by default). | Override when `/opt` is restricted or to stage multiple environments. |
 | `DCC_BASE_IMAGE` | NVIDIA-enabled Docker image tag for generated services. | Use images compatible with the NVIDIA Container Toolkit and target CUDA version. |
 | `DCC_DASHBOARD_PORT` | Exposed HTTP port for the operator dashboard. | Configure reverse proxy if public access is required. |
 | `DCC_REFRESH_INTERVAL` | Controls UI update cadence (e.g., websocket, SSE, polling). | Favor streaming mechanisms to avoid full page reloads. |
