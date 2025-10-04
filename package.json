@@ -1,0 +1,13 @@
+{
+  "name": "docker-control-center",
+  "version": "0.1.0",
+  "description": "Bootstrap utilities and UI scaffolding for the Docker Control Center core engine.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "node scripts/build.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
