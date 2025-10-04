@@ -8,6 +8,7 @@ A lightweight control plane for hosting GPU-accelerated AI applications on deman
 - Application fleet table with start/stop/reinstall/deinstall controls and traffic-light health signals (red/offline, yellow/installing, green/online/port reachable).
 - Isolated `/opt/dockerstore/<app>` workspaces mounted into containers at `/app`.
 - Node.js installer that verifies Docker, runs Prisma migrations/seeding, builds the deluxe dashboard preview, mirrors the Git checkout (including `.git`) to `/opt/dcc`, and launches the bundled dashboard server.
+- App lifecycle framework that validates onboarding payloads, derives deterministic workspace slugs, syncs Git repositories, renders Docker Compose definitions, and drives `docker compose up -d` to install workloads.
 
 ## Quick Start
 ```bash
@@ -53,6 +54,27 @@ rollback flow that removes files and Docker packages it introduced. Configure th
 4. Monitor build progress and container readiness directly in the dashboard. Status lamps turn green once the configured port responds.
 5. Promote successful installs into the marketplace dialog for future reuse.
 
+### Programmatic API
+
+The `AppLifecycleManager` encapsulates the documented workflow for registering and installing applications.
+
+```js
+import { AppLifecycleManager } from 'docker-control-center';
+
+const manager = new AppLifecycleManager({ prisma });
+
+const app = await manager.registerApp({
+  name: 'My Stable Diffusion',
+  repositoryUrl: 'https://github.com/example/stable-diffusion.git',
+  startCommand: 'python launch.py --listen',
+  port: 7860
+});
+
+await manager.installApp(app.id);
+```
+
+The manager enforces validation rules, derives a sanitized `workspaceSlug`, writes a GPU-ready Compose file under `/opt/dockerstore/<slug>/docker-compose.yaml`, and executes `docker compose up -d` to provision the service.
+
 ### Database
 
 - Prisma schema lives in `prisma/schema.prisma` and targets SQLite by default.
@@ -63,6 +85,7 @@ Detailed lifecycle and automation guidance lives in [`docs/architecture-overview
 
 ## Development
 - Run `npm run build` to regenerate the deluxe placeholder UI assets in `dist/`.
+- Execute `npm test` to exercise the lifecycle manager workflow using in-memory Prisma doubles.
 - Align UI work with the responsive dashboard requirements outlined in the architecture overview.
 - Add integration tests around compose generation and container health checks once implementation lands.
 - Keep documentation updated alongside feature work.

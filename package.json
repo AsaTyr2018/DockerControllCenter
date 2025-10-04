@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node scripts/build.js",
     "start": "node scripts/serve.js --root dist",
+    "test": "node --test",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed"
