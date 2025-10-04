@@ -36,9 +36,10 @@
    - Display a traffic-light health indicator using Prisma-tracked status enums (`RUNNING`, `STARTING`, `STOPPED`) combined with periodic port reachability checks and orchestrator health data.
 
 5. **Marketplace Reuse**
-   - Completed installs can promote their metadata into `MarketplaceTemplate` records.
-   - The marketplace dialog lists locally captured templates immediately and will transition to Prisma-backed data once lifecycle promotion is wired up.
-   - Templates store summaries, repository URLs, default ports, GPU requirements, and refer back to the originating app when available.
+- Completed installs can promote their metadata into `MarketplaceTemplate` records.
+- The marketplace dialog lists locally captured templates immediately and will transition to Prisma-backed data once lifecycle promotion is wired up.
+- Templates store summaries, repository URLs, default ports, GPU requirements, and refer back to the originating app when available.
+- The static dashboard preview now lets operators "Deploy" a saved template to simulate an install and visualize the fleet table before the backend is connected.
 
 ## Component Responsibilities
 | Component | Responsibility |

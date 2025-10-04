@@ -492,19 +492,19 @@ function writePlaceholderAssets() {
           <div class="stat-grid">
             <div class="stat-card">
               <span class="label">Running</span>
-              <span class="value">0</span>
+              <span class="value" data-stat="running">0</span>
             </div>
             <div class="stat-card">
               <span class="label">Starting</span>
-              <span class="value">0</span>
+              <span class="value" data-stat="starting">0</span>
             </div>
             <div class="stat-card">
               <span class="label">Stopped</span>
-              <span class="value">0</span>
+              <span class="value" data-stat="stopped">0</span>
             </div>
             <div class="stat-card">
               <span class="label">Marketplace Templates</span>
-              <span class="value">0</span>
+              <span class="value" data-stat="templates">0</span>
             </div>
           </div>
         </article>
@@ -543,8 +543,8 @@ function writePlaceholderAssets() {
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr class="empty-row">
+          <tbody data-fleet-body>
+            <tr class="empty-row" data-empty-row>
               <td colspan="5">
                 <div class="empty-state">
                   <strong>No applications registered yet.</strong>
@@ -630,18 +630,29 @@ function writePlaceholderAssets() {
     <script>
       (function () {
         const STORAGE_KEY = 'dcc.marketplaceTemplates';
+        const APP_STORAGE_KEY = 'dcc.installedApps';
         const addAppDialog = document.querySelector('[data-dialog-id="add-app"]');
         const marketplaceDialog = document.querySelector('[data-dialog-id="marketplace"]');
         const addAppForm = addAppDialog.querySelector('form');
         const marketplaceGrid = marketplaceDialog.querySelector('[data-marketplace-grid]');
         const templateSelect = addAppForm.querySelector('select[name="template"]');
+        const fleetTableBody = document.querySelector('[data-fleet-body]');
+        const emptyRow = fleetTableBody?.querySelector('[data-empty-row]') || null;
+        const statsElements = {
+          running: document.querySelector('[data-stat="running"]'),
+          starting: document.querySelector('[data-stat="starting"]'),
+          stopped: document.querySelector('[data-stat="stopped"]'),
+          templates: document.querySelector('[data-stat="templates"]')
+        };
         let editingId = null;
+        let templates = [];
+        let apps = [];
 
         const generateId = () => {
           if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
             return crypto.randomUUID();
           }
-          return 'template-' + Date.now().toString(16) + '-' + Math.random().toString(16).slice(2);
+          return 'dcc-' + Date.now().toString(16) + '-' + Math.random().toString(16).slice(2);
         };
 
         const safeParse = (value) => {
@@ -656,9 +667,18 @@ function writePlaceholderAssets() {
         };
 
         const loadTemplates = () => safeParse(localStorage.getItem(STORAGE_KEY));
+        const loadApps = () => safeParse(localStorage.getItem(APP_STORAGE_KEY));
 
-        const saveTemplates = (templates) => {
+        const commitTemplates = (nextTemplates) => {
+          templates = Array.isArray(nextTemplates) ? nextTemplates : [];
           localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+          refreshUI();
+        };
+
+        const commitApps = (nextApps) => {
+          apps = Array.isArray(nextApps) ? nextApps : [];
+          localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(apps));
+          refreshUI();
         };
 
         const createActionButton = (action, label, iconPath) => {
@@ -677,11 +697,11 @@ function writePlaceholderAssets() {
           return button;
         };
 
-        const renderTemplateOptions = (templates) => {
+        const renderTemplateOptions = (list) => {
           templateSelect
             .querySelectorAll('[data-dynamic-option]')
             .forEach((option) => option.remove());
-          templates.forEach((template) => {
+          list.forEach((template) => {
             const option = document.createElement('option');
             option.value = template.id;
             option.textContent = template.name;
@@ -690,18 +710,108 @@ function writePlaceholderAssets() {
           });
         };
 
-        const renderMarketplace = (templates) => {
+        const createStatusPill = (status) => {
+          const pill = document.createElement('span');
+          pill.className = 'status-pill';
+          pill.dataset.status = status;
+
+          const dot = document.createElement('span');
+          dot.className = 'status-dot';
+          pill.appendChild(dot);
+
+          const label = document.createElement('span');
+          label.textContent = status === 'STARTING' ? 'Installing' : status;
+          pill.appendChild(label);
+
+          return pill;
+        };
+
+        const formatTimestamp = (value) => {
+          if (!value) return 'Just now';
+          const date = new Date(value);
+          if (Number.isNaN(date.getTime())) {
+            return 'Just now';
+          }
+          return date.toLocaleString();
+        };
+
+        const renderFleet = (list) => {
+          if (!fleetTableBody) return;
+          fleetTableBody
+            .querySelectorAll('[data-app-row]')
+            .forEach((row) => row.remove());
+
+          if (!list.length) {
+            if (emptyRow) emptyRow.hidden = false;
+            return;
+          }
+
+          if (emptyRow) emptyRow.hidden = true;
+
+          list.forEach((app) => {
+            const row = document.createElement('tr');
+            row.dataset.appRow = 'true';
+
+            const nameCell = document.createElement('td');
+            const nameLabel = document.createElement('strong');
+            nameLabel.textContent = app.name;
+            nameCell.appendChild(nameLabel);
+            if (app.repository) {
+              const repo = document.createElement('p');
+              repo.className = 'table-hint';
+              repo.textContent = app.repository;
+              nameCell.appendChild(repo);
+            }
+
+            const statusCell = document.createElement('td');
+            statusCell.appendChild(createStatusPill(app.status || 'STOPPED'));
+
+            const portCell = document.createElement('td');
+            portCell.textContent = app.port ? String(app.port) : '—';
+
+            const seenCell = document.createElement('td');
+            seenCell.textContent = formatTimestamp(app.lastSeenAt || app.installedAt);
+
+            const actionsCell = document.createElement('td');
+            actionsCell.className = 'table-actions';
+            const placeholder = document.createElement('span');
+            placeholder.className = 'table-hint';
+            placeholder.textContent = 'Lifecycle controls coming soon';
+            actionsCell.appendChild(placeholder);
+
+            row.appendChild(nameCell);
+            row.appendChild(statusCell);
+            row.appendChild(portCell);
+            row.appendChild(seenCell);
+            row.appendChild(actionsCell);
+
+            fleetTableBody.appendChild(row);
+          });
+        };
+
+        const renderStats = (appList, templateList) => {
+          const running = appList.filter((app) => app.status === 'RUNNING').length;
+          const starting = appList.filter((app) => app.status === 'STARTING').length;
+          const stopped = appList.filter((app) => !['RUNNING', 'STARTING'].includes(app.status)).length;
+          if (statsElements.running) statsElements.running.textContent = String(running);
+          if (statsElements.starting) statsElements.starting.textContent = String(starting);
+          if (statsElements.stopped) statsElements.stopped.textContent = String(stopped);
+          if (statsElements.templates) statsElements.templates.textContent = String(templateList.length);
+        };
+
+        const renderMarketplace = (templateList, appList) => {
           marketplaceGrid
             .querySelectorAll('[data-template-card]')
             .forEach((card) => card.remove());
+
           const emptyState = marketplaceGrid.querySelector('[data-empty-state]');
-          if (templates.length === 0) {
-            emptyState.hidden = false;
+          if (!templateList.length) {
+            if (emptyState) emptyState.hidden = false;
             return;
           }
-          emptyState.hidden = true;
+          if (emptyState) emptyState.hidden = true;
 
-          templates.forEach((template) => {
+          templateList.forEach((template) => {
             const card = document.createElement('div');
             card.className = 'marketplace-card';
             card.dataset.templateCard = 'true';
@@ -733,6 +843,12 @@ function writePlaceholderAssets() {
 
             const actions = document.createElement('div');
             actions.className = 'marketplace-actions';
+
+            const deployButton = createActionButton(
+              'deploy',
+              'Deploy',
+              'M6.5 3.5a.5.5 0 0 1 .79-.407l5 3.5a.5.5 0 0 1 0 .814l-5 3.5A.5.5 0 0 1 6.5 10.5v-7zM5 3.5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0v-7z'
+            );
             const editButton = createActionButton(
               'edit',
               'Edit',
@@ -743,6 +859,29 @@ function writePlaceholderAssets() {
               'Terminate',
               'M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 0 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 1 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z'
             );
+
+            const matchingApp = appList.find(
+              (app) =>
+                (app.templateId && app.templateId === template.id) ||
+                (app.name && template.name && app.name.toLowerCase() === template.name.toLowerCase())
+            );
+
+            if (matchingApp) {
+              const label = deployButton.querySelector('span');
+              if (matchingApp.status === 'STARTING') {
+                deployButton.disabled = true;
+                if (label) label.textContent = 'Installing…';
+              } else {
+                if (label) label.textContent = 'Reinstall';
+              }
+            }
+
+            deployButton.addEventListener('click', () => {
+              if (deployButton.disabled) return;
+              installTemplate(template);
+            });
+
+            actions.appendChild(deployButton);
             actions.appendChild(editButton);
             actions.appendChild(terminateButton);
             card.appendChild(actions);
@@ -759,14 +898,56 @@ function writePlaceholderAssets() {
             });
 
             terminateButton.addEventListener('click', () => {
-              const nextTemplates = loadTemplates().filter((item) => item.id !== template.id);
-              saveTemplates(nextTemplates);
-              renderMarketplace(nextTemplates);
-              renderTemplateOptions(nextTemplates);
+              commitTemplates(templates.filter((item) => item.id !== template.id));
             });
 
             marketplaceGrid.appendChild(card);
           });
+        };
+
+        const refreshUI = () => {
+          renderTemplateOptions(templates);
+          renderMarketplace(templates, apps);
+          renderFleet(apps);
+          renderStats(apps, templates);
+        };
+
+        const installTemplate = (template) => {
+          const now = new Date().toISOString();
+          const port = template.port ? parseInt(template.port, 10) : null;
+          const existing = apps.find(
+            (app) =>
+              (app.templateId && app.templateId === template.id) ||
+              (app.name && template.name && app.name.toLowerCase() === template.name.toLowerCase())
+          );
+          const appId = existing ? existing.id : generateId();
+          const baseRecord = {
+            id: appId,
+            templateId: template.id,
+            name: template.name,
+            repository: template.repository || '',
+            startCommand: template.startCommand || '',
+            port: Number.isFinite(port) ? port : null,
+            installedAt: existing?.installedAt || now,
+            lastSeenAt: now,
+            status: 'STARTING'
+          };
+
+          const nextApps = existing
+            ? apps.map((app) => (app.id === appId ? { ...app, ...baseRecord } : app))
+            : [...apps, baseRecord];
+
+          commitApps(nextApps);
+
+          window.setTimeout(() => {
+            const current = loadApps();
+            const updated = current.map((app) =>
+              app.id === appId
+                ? { ...app, status: 'RUNNING', lastSeenAt: new Date().toISOString() }
+                : app
+            );
+            commitApps(updated);
+          }, 900);
         };
 
         const resetForm = () => {
@@ -778,27 +959,31 @@ function writePlaceholderAssets() {
         addAppForm.addEventListener('submit', (event) => {
           event.preventDefault();
           const formData = new FormData(addAppForm);
+          const name = (formData.get('name') || '').toString().trim();
+          if (!name) {
+            addAppForm.name.focus();
+            return;
+          }
+
           const template = {
             id: editingId || generateId(),
-            name: formData.get('name').trim(),
-            repository: formData.get('repository').trim(),
-            startCommand: formData.get('startCommand').trim(),
-            port: formData.get('port').trim(),
-            template: formData.get('template'),
+            name,
+            repository: (formData.get('repository') || '').toString().trim(),
+            startCommand: (formData.get('startCommand') || '').toString().trim(),
+            port: (formData.get('port') || '').toString().trim(),
+            template: (formData.get('template') || '').toString(),
             updatedAt: new Date().toISOString()
           };
 
-          const templates = loadTemplates();
           const existingIndex = templates.findIndex((item) => item.id === template.id);
           if (existingIndex >= 0) {
-            templates.splice(existingIndex, 1, template);
+            const next = [...templates];
+            next.splice(existingIndex, 1, template);
+            commitTemplates(next);
           } else {
-            templates.push(template);
+            commitTemplates([...templates, template]);
           }
 
-          saveTemplates(templates);
-          renderMarketplace(templates);
-          renderTemplateOptions(templates);
           addAppDialog.close('submit');
           resetForm();
         });
@@ -814,9 +999,9 @@ function writePlaceholderAssets() {
         });
 
         const bootstrap = () => {
-          const templates = loadTemplates();
-          renderMarketplace(templates);
-          renderTemplateOptions(templates);
+          templates = loadTemplates();
+          apps = loadApps();
+          refreshUI();
         };
 
         bootstrap();

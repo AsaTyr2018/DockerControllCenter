@@ -97,3 +97,13 @@
 **Docs:** README.md, docs/architecture-overview.md updated.
 **Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate assets.
 **Refs:** N/A
+
+## [2025-10-05 12:00] Allow marketplace templates to deploy in the preview UI
+**Change Type:** Normal Change  
+**Why:** Operators could capture templates but not simulate installing them from the marketplace dialog.  
+**What changed:** Added a Deploy control that installs templates into a local fleet list, updated stats, and refreshed docs to describe the new preview behavior.  
+**Impact:** Installations are still local-storage simulations; no backend or database changes required.  
+**Testing:** `npm run build`, `npm test`  
+**Docs:** README.md, docs/architecture-overview.md updated.  
+**Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate assets.  
+**Refs:** N/A
