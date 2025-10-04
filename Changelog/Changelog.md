@@ -19,11 +19,21 @@
 **Refs:** N/A
 
 ## [2025-10-04 13:05] Auto-start dashboard and persist Git mirror
+**Change Type:** Normal Change
+**Why:** Ensure the setup command provisions a runnable dashboard, retains the Git clone for updates, and creates required runtime directories.
+**What changed:** Updated the installer to mirror the repository (including `.git`) into `/opt/dcc`, create runtime/log directories, stop previous servers before deploy, and launch a bundled static server. Added a reusable `serve.js` helper, documented the behavior, and exposed an `npm start` shortcut.
+**Impact:** Installations now start a background Node server listening on `DCC_DASHBOARD_PORT`; ensure the port is free before running setup.
+**Testing:** `npm run build`
+**Docs:** README.md, docs/setup.md updated.
+**Rollback Plan:** Run `node scripts/setup.js --rollback` to stop the server and restore the snapshot, or revert the commit.
+**Refs:** N/A
+
+## [2025-10-04 14:45] Add marketplace-ready dashboard and Prisma scaffold
 **Change Type:** Normal Change  
-**Why:** Ensure the setup command provisions a runnable dashboard, retains the Git clone for updates, and creates required runtime directories.  
-**What changed:** Updated the installer to mirror the repository (including `.git`) into `/opt/dcc`, create runtime/log directories, stop previous servers before deploy, and launch a bundled static server. Added a reusable `serve.js` helper, documented the behavior, and exposed an `npm start` shortcut.  
-**Impact:** Installations now start a background Node server listening on `DCC_DASHBOARD_PORT`; ensure the port is free before running setup.  
-**Testing:** `npm run build`  
-**Docs:** README.md, docs/setup.md updated.  
-**Rollback Plan:** Run `node scripts/setup.js --rollback` to stop the server and restore the snapshot, or revert the commit.  
+**Why:** Preview the planned Add App workflow, marketplace reuse, and lifecycle controls while wiring up the persistence layer.  
+**What changed:** Replaced the deluxe placeholder UI with a dashboard mock featuring dialogs, fleet tables, and status lamps; introduced Prisma + SQLite schema, seed data, and migrations; taught the installer to run Prisma setup; added demo marketplace data, docs, and configuration updates.  
+**Impact:** Adds Node/Prisma dependencies and creates a SQLite database (`dcc.sqlite`) during setup; ensure target hosts allow writing under `/opt/dcc/data`.  
+**Testing:** `npm run build`, `npx prisma migrate deploy`, `npm run db:seed`  
+**Docs:** README.md, docs/architecture-overview.md, docs/setup.md, docs/configuration.md updated.  
+**Rollback Plan:** Revert the commit and delete generated SQLite databases under `prisma/` or `/opt/dcc/data`.  
 **Refs:** N/A

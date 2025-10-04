@@ -2,7 +2,8 @@
 
 The Docker Control Center repository ships with a Node.js setup utility that provisions runtime
 prerequisites, builds the placeholder UX, deploys the artifacts under `/opt/dcc`, mirrors the Git
-checkout (including `.git`) for future updates, and launches the bundled dashboard server.
+checkout (including `.git`) for future updates, initialises the SQLite database through Prisma,
+and launches the bundled dashboard server.
 
 ## Prerequisites
 - Node.js 18 or newer available on the PATH.
@@ -21,10 +22,11 @@ The installer performs the following steps:
 3. Installs Node.js dependencies for the repository and runs the build pipeline.
 4. Gracefully stops any previously launched dashboard server and snapshots the existing `/opt/dcc` deployment.
 5. Copies the freshly built assets into `/opt/dcc/app`.
-6. Mirrors the Git checkout into `/opt/dcc/repo` (including `.git`) so `git pull` can fetch updates in-place.
-7. Creates `/opt/dcc/data` and `/opt/dcc/logs` for runtime use and audit trails.
-8. Launches the static dashboard server from the mirrored repository on `DCC_DASHBOARD_PORT` (default: 8080).
-9. Writes an install state file for rollback (including server PID and log path metadata).
+6. Creates `/opt/dcc/data` and `/opt/dcc/logs` for runtime use and audit trails.
+7. Executes `prisma generate`, `prisma migrate deploy`, and `prisma db seed` with `DATABASE_URL` defaulting to `file:/opt/dcc/data/dcc.sqlite` unless you override it.
+8. Mirrors the Git checkout into `/opt/dcc/repo` (including `.git`) so `git pull` can fetch updates in-place.
+9. Launches the static dashboard server from the mirrored repository on `DCC_DASHBOARD_PORT` (default: 8080).
+10. Writes an install state file for rollback (including server PID, log path, and database metadata).
 
 Set `DCC_INSTALL_DIR=/custom/path` to override the default target directory.
 

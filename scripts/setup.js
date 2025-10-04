@@ -175,6 +175,20 @@ function ensureRuntimeDirectories() {
   return { dataDir, logDir };
 }
 
+function initializeDatabase(state, dataDir) {
+  const sqlitePath = path.join(dataDir, 'dcc.sqlite');
+  const databaseUrl = process.env.DATABASE_URL || `file:${sqlitePath}`;
+  const prismaEnv = { ...process.env, DATABASE_URL: databaseUrl };
+
+  console.log(`⚙️  Initializing Prisma schema at ${databaseUrl}...`);
+  runCommand('npx', ['prisma', 'generate'], { cwd: projectRoot, env: prismaEnv });
+  runCommand('npx', ['prisma', 'migrate', 'deploy'], { cwd: projectRoot, env: prismaEnv });
+  runCommand('npx', ['prisma', 'db', 'seed'], { cwd: projectRoot, env: prismaEnv });
+
+  state.databaseUrl = databaseUrl;
+  console.log('✓ Prisma client generated, migrations applied, and seed data loaded.');
+}
+
 function startDashboardServer(state, repoDir, logDir) {
   const serverScript = path.join(repoDir, 'scripts', 'serve.js');
   if (!fs.existsSync(serverScript)) {
@@ -289,8 +303,9 @@ function install() {
   stopExistingServer();
   backupExistingInstall(state);
   deployArtifacts();
-  const repoDir = syncRepositoryMirror();
   const runtimeDirs = ensureRuntimeDirectories();
+  initializeDatabase(state, runtimeDirs.dataDir);
+  const repoDir = syncRepositoryMirror();
   state.repoDir = repoDir;
   state.dataDir = runtimeDirs.dataDir;
   state.logDir = runtimeDirs.logDir;

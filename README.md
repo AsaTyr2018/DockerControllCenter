@@ -3,11 +3,11 @@
 A lightweight control plane for hosting GPU-accelerated AI applications on demand.
 
 ## Features
-- Register new AI services through a guided web form with validation.
-- Provision standardized NVIDIA-enabled Docker Compose stacks per application.
-- Mount isolated `/opt/dockerstore/<app>` workspaces into containers at `/app`.
-- Surface live container status and launch URLs on a responsive dashboard without manual refresh cycles.
-- Bootstrap environments with a Node.js installer that verifies Docker, builds the UX placeholder, mirrors the Git checkout (including `.git`) to `/opt/dcc`, and launches the bundled dashboard server.
+- Guided "Add App" dialog prepared for validating metadata and provisioning GPU-ready Docker Compose stacks.
+- Marketplace dialog that surfaces previously installed apps as reusable templates stored in Prisma + SQLite.
+- Application fleet table with start/stop/reinstall/deinstall controls and traffic-light health signals (red/offline, yellow/installing, green/online/port reachable).
+- Isolated `/opt/dockerstore/<app>` workspaces mounted into containers at `/app`.
+- Node.js installer that verifies Docker, runs Prisma migrations/seeding, builds the deluxe dashboard preview, mirrors the Git checkout (including `.git`) to `/opt/dcc`, and launches the bundled dashboard server.
 
 ## Quick Start
 ```bash
@@ -15,11 +15,18 @@ A lightweight control plane for hosting GPU-accelerated AI applications on deman
 git clone https://github.com/example/DockerControllCenter.git
 cd DockerControllCenter
 
-# Run the installer (Node.js 18+ required)
-node scripts/setup.js --install
+# Prepare environment variables for Prisma
+cp .env.example .env
+
+# Install dependencies and set up the database + deluxe dashboard preview
+npm install
+npx prisma migrate dev --name init
+npx prisma db seed
+npm run build
+npm start
 ```
 
-Need to undo the setup? Execute `node scripts/setup.js --rollback` to restore the previous state. The installer creates `/opt/dcc/app` for the built dashboard, `/opt/dcc/repo` with the full Git clone (ready for `git pull`), `/opt/dcc/data` for runtime files, and starts the static dashboard server on `http://localhost:${DCC_DASHBOARD_PORT:-8080}`.
+Need to undo the setup? Execute `node scripts/setup.js --rollback` to restore the previous state. The installer creates `/opt/dcc/app` for the built dashboard, `/opt/dcc/repo` with the full Git clone (ready for `git pull`), `/opt/dcc/data` for runtime files (including `dcc.sqlite`), runs Prisma migrations/seeding automatically, and starts the static dashboard server on `http://localhost:${DCC_DASHBOARD_PORT:-8080}`.
 
 ## Setup Automation
 The installer orchestrates prerequisite checks, Docker package installation (via `apt-get` when
@@ -40,10 +47,17 @@ rollback flow that removes files and Docker packages it introduced. Configure th
 > Document additional environment variables in `/docs/configuration.md` as they are introduced.
 
 ## Usage
-1. Open the dashboard and choose **Add Application**.
-2. Provide the application name, Git repository URL, optional requirements file name, container start command, and service port.
+1. Open the dashboard and choose **Add App** to launch the registration dialog.
+2. Provide the application name, Git repository URL, container start command, and service port. Attach or reuse a marketplace template to speed up provisioning.
 3. Submit the form to trigger repository cloning into `/opt/dockerstore/<appname>` and Compose generation.
-4. Monitor build progress and container readiness directly in the dashboard. The service URL is listed once the stack is healthy.
+4. Monitor build progress and container readiness directly in the dashboard. Status lamps turn green once the configured port responds.
+5. Promote successful installs into the marketplace dialog for future reuse.
+
+### Database
+
+- Prisma schema lives in `prisma/schema.prisma` and targets SQLite by default.
+- Seed data (`prisma/seed.js`) provisions a **Stable Diffusion Demo** entry so the marketplace and fleet table render meaningful placeholders.
+- Override the `DATABASE_URL` environment variable to point at production-grade storage. The setup automation falls back to `file:/opt/dcc/data/dcc.sqlite` when none is provided.
 
 Detailed lifecycle and automation guidance lives in [`docs/architecture-overview.md`](docs/architecture-overview.md).
 

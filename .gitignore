@@ -3,3 +3,8 @@ dist/
 .npm/
 .DS_Store
 npm-debug.log*
+.env
+prisma/*.db
+prisma/**/*.db
+prisma/*.db-journal
+prisma/**/*.db-journal
