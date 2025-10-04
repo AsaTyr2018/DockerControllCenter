@@ -87,3 +87,13 @@
 **Docs:** README.md, docs/architecture-overview.md updated.
 **Rollback Plan:** Revert commit and rerun `npm run build` to regenerate assets.
 **Refs:** N/A
+
+## [2025-10-05 09:00] Enable local marketplace authoring
+**Change Type:** Normal Change
+**Why:** Provide an interactive Add App workflow while the backend API is finalized.
+**What changed:** Activated the Add App form, persisted templates to browser storage, added edit/terminate marketplace controls, and refreshed documentation.
+**Impact:** Templates are stored per browser session; backend services remain unchanged.
+**Testing:** `npm run build`, `npm test`
+**Docs:** README.md, docs/architecture-overview.md updated.
+**Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate assets.
+**Refs:** N/A
