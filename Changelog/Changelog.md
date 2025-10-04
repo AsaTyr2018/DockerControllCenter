@@ -77,3 +77,13 @@
 **Docs:** README.md updated.
 **Rollback Plan:** Revert this commit.
 **Refs:** N/A
+
+## [2025-10-04 22:30] Remove demo UI artifacts and disable unfinished dialogs
+**Change Type:** Standard Change
+**Why:** Prevent confusion caused by non-functional Add App/Marketplace previews and lingering demo content.
+**What changed:** Cleared placeholder app rows and example marketplace cards from the dashboard build script, disabled Add App and Marketplace form controls until the backend is wired up, refreshed README guidance, and documented the preview status in the architecture overview.
+**Impact:** Dashboard now shows empty states only; operators see disabled controls instead of demo data. No database impact.
+**Testing:** `npm run build`, `npm test`
+**Docs:** README.md, docs/architecture-overview.md updated.
+**Rollback Plan:** Revert commit and rerun `npm run build` to regenerate assets.
+**Refs:** N/A

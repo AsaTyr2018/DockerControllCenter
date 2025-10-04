@@ -15,6 +15,7 @@
      - `port`: HTTP port exposed by the application and probed for reachability.
      - `template`: optional reference to a `MarketplaceTemplate` entry for pre-populated defaults.
    - Validation ensures name uniqueness, required fields, and marketplace template integrity via Prisma.
+   - The placeholder dashboard keeps the controls disabled until the backend API is connected, preventing the old demo workflow from appearing functional.
 
 2. **Workspace Provisioning**
    - Clone the Git repository into `/opt/dockerstore/<name>`.
