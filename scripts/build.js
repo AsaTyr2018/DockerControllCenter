@@ -370,6 +370,27 @@ function writePlaceholderAssets() {
         background: rgba(240, 246, 252, 0.08);
       }
 
+      .empty-row td {
+        padding: 2rem 1rem;
+        text-align: center;
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .empty-state strong {
+        font-size: 1rem;
+      }
+
+      button[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
       footer {
         text-align: center;
         color: rgba(240, 246, 252, 0.4);
@@ -416,19 +437,19 @@ function writePlaceholderAssets() {
           <div class="stat-grid">
             <div class="stat-card">
               <span class="label">Running</span>
-              <span class="value">1</span>
+              <span class="value">0</span>
             </div>
             <div class="stat-card">
               <span class="label">Starting</span>
-              <span class="value">1</span>
+              <span class="value">0</span>
             </div>
             <div class="stat-card">
               <span class="label">Stopped</span>
-              <span class="value">2</span>
+              <span class="value">0</span>
             </div>
             <div class="stat-card">
               <span class="label">Marketplace Templates</span>
-              <span class="value">4</span>
+              <span class="value">0</span>
             </div>
           </div>
         </article>
@@ -468,10 +489,18 @@ function writePlaceholderAssets() {
             </tr>
           </thead>
           <tbody>
+            <tr class="empty-row">
+              <td colspan="5">
+                <div class="empty-state">
+                  <strong>No applications registered yet.</strong>
+                  <p class="table-hint">Use Add App or promote a marketplace template to see entries here.</p>
+                </div>
+              </td>
+            </tr>
             <tr>
               <td>
-                <strong>Stable Diffusion Demo</strong>
-                <div class="table-hint">Seeded from Prisma for preview.</div>
+                <strong>Example GPU Inference</strong>
+                <div class="table-hint">This preview row illustrates the controls available once an app is running.</div>
               </td>
               <td>
                 <span class="status-pill" data-status="RUNNING">
@@ -483,49 +512,9 @@ function writePlaceholderAssets() {
               <td>Online • port reachable</td>
               <td>
                 <div class="table-actions">
-                  <button class="primary">Stop</button>
-                  <button>Restart</button>
-                  <button>Deinstall</button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <strong>LangChain Assistant</strong>
-                <div class="table-hint">Provisioning compose stack…</div>
-              </td>
-              <td>
-                <span class="status-pill" data-status="STARTING">
-                  <span class="status-dot"></span>
-                  Starting
-                </span>
-              </td>
-              <td>5050</td>
-              <td>Awaiting health check</td>
-              <td>
-                <div class="table-actions">
+                  <button class="primary">Open App</button>
                   <button>Stop</button>
-                  <button>Deinstall</button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <strong>Finetune Lab</strong>
-                <div class="table-hint">Offline — ready for reinstall.</div>
-              </td>
-              <td>
-                <span class="status-pill" data-status="STOPPED">
-                  <span class="status-dot"></span>
-                  Stopped
-                </span>
-              </td>
-              <td>9090</td>
-              <td>Last seen 2 hours ago</td>
-              <td>
-                <div class="table-actions">
-                  <button class="primary">Start</button>
-                  <button>Reinstall</button>
+                  <button>Restart</button>
                   <button>Deinstall</button>
                 </div>
               </td>
@@ -570,7 +559,7 @@ function writePlaceholderAssets() {
             Marketplace Template
             <select name="template">
               <option value="">Create new template</option>
-              <option value="stable-diffusion">Stable Diffusion Demo</option>
+              <option value="" disabled>No saved templates yet</option>
             </select>
           </label>
         </div>
@@ -593,35 +582,18 @@ function writePlaceholderAssets() {
         <div class="marketplace-grid">
           <div class="marketplace-card">
             <div class="tag-list">
-              <span>GPU</span>
-              <span>Seeded</span>
+              <span>Empty</span>
             </div>
-            <h3>Stable Diffusion Demo</h3>
-            <p class="table-hint">Txt2img + img2img baseline with AUTOMATIC1111 UI. Port 7860.</p>
-            <button type="submit">Deploy Template</button>
+            <h3>No templates yet</h3>
+            <p class="table-hint">Templates appear after promoting a successfully installed app.</p>
+            <button type="submit" disabled>Deploy Template</button>
           </div>
           <div class="marketplace-card">
             <div class="tag-list">
-              <span>LLM</span>
+              <span>Preview</span>
             </div>
-            <h3>LangChain Assistant</h3>
-            <p class="table-hint">Boilerplate conversational agent with Redis memory.</p>
-            <button type="submit">Deploy Template</button>
-          </div>
-          <div class="marketplace-card">
-            <div class="tag-list">
-              <span>Vision</span>
-            </div>
-            <h3>DreamBooth Trainer</h3>
-            <p class="table-hint">Interactive fine-tuning workflow. Requires >= 16GB VRAM.</p>
-            <button type="submit">Deploy Template</button>
-          </div>
-          <div class="marketplace-card">
-            <div class="tag-list">
-              <span>Inference</span>
-            </div>
-            <h3>Segment Anything</h3>
-            <p class="table-hint">Pre-configured SAM service behind FastAPI.</p>
+            <h3>Example Template</h3>
+            <p class="table-hint">Once templates exist, operators can launch new installs in one click.</p>
             <button type="submit">Deploy Template</button>
           </div>
         </div>
