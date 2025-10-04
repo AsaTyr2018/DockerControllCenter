@@ -169,6 +169,27 @@ export function createPrismaDouble({ apps = [], templates = [], containerStates 
       };
       state.containerStates[index] = updated;
       return { ...updated };
+    },
+
+    async delete({ where }) {
+      const index = state.containerStates.findIndex((entry) => {
+        if (where.appId) {
+          return entry.appId === where.appId;
+        }
+
+        if (where.id) {
+          return entry.id === where.id;
+        }
+
+        return false;
+      });
+
+      if (index === -1) {
+        throw new Error('Container state not found.');
+      }
+
+      const [removed] = state.containerStates.splice(index, 1);
+      return { ...removed };
     }
   };
 

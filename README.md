@@ -50,7 +50,7 @@ rollback flow that removes files and Docker packages it introduced. Configure th
 1. Open the dashboard and use **Add App** to capture app metadata; entries persist in browser storage and populate the marketplace dialog instantly.
 2. Launch saved templates with the green **Deploy** action, edit them via the blue **E**, or remove them with the red **X**. Deployed templates now populate the fleet table to simulate an install until the backend arrives.
 3. Once the API is available, submitting the form will trigger repository cloning into `/opt/dockerstore/<appname>` and Compose generation.
-4. Monitor build progress and container readiness directly in the dashboard. Use the Start/Stop toggle, Reinstall, and Deinstall actions in the fleet table to simulate lifecycle operations while status lamps track progress (green = reachable).
+4. Monitor build progress and container readiness directly in the dashboard. Lifecycle controls (Start, Stop, Restart, Reinstall, Deinstall) now invoke the backend `AppLifecycleManager`, which shells out to Docker to operate on each app's Compose stack while status lamps track progress (green = reachable).
 5. Promote successful installs into the marketplace dialog for future reuse.
 
 ### Programmatic API
@@ -70,6 +70,13 @@ const app = await manager.registerApp({
 });
 
 await manager.installApp(app.id);
+
+// Manage the stack in response to dashboard actions
+await manager.startApp(app.id);
+await manager.restartApp(app.id);
+await manager.stopApp(app.id);
+await manager.reinstallApp(app.id);
+await manager.deinstallApp(app.id);
 ```
 
 The manager enforces validation rules, derives a sanitized `workspaceSlug`, writes a GPU-ready Compose file under `/opt/dockerstore/<slug>/docker-compose.yaml`, and executes `docker compose up -d` to provision the service.
