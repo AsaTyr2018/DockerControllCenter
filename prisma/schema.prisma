@@ -20,7 +20,10 @@ model App {
   updatedAt       DateTime   @updatedAt
   lastSeenAt      DateTime?
   notes           String?
+  openAppBaseUrl  String?
   marketplaceTemplates MarketplaceTemplate[]
+  settings        AppSettings?
+  containerStates DockerContainerState[]
 }
 
 model MarketplaceTemplate {
@@ -35,4 +38,31 @@ model MarketplaceTemplate {
   sourceApp       App?       @relation(fields: [sourceAppId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model AppSettings {
+  id             String   @id @default(cuid())
+  appId          String   @unique
+  openAppBaseUrl String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  app            App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+}
+
+model DockerContainerState {
+  id             String   @id @default(cuid())
+  appId          String
+  containerId    String   @unique
+  containerName  String
+  status         String
+  health         String?
+  state          Json?
+  metrics        Json?
+  lastObservedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  app            App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId, updatedAt])
+  @@unique([appId])
 }

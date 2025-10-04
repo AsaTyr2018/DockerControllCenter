@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.dockerContainerState.deleteMany({});
+  await prisma.appSettings.deleteMany({});
   const removedTemplates = await prisma.marketplaceTemplate.deleteMany({
     where: {
       name: {
@@ -20,7 +22,7 @@ async function main() {
   });
 
   console.log(
-    `✓ Cleared ${removedApps.count} demo app(s) and ${removedTemplates.count} template(s). Database is ready for fresh onboarding.`
+    `✓ Cleared ${removedApps.count} demo app(s), ${removedTemplates.count} template(s), and reset orchestrator state.`
   );
 }
 

@@ -49,11 +49,21 @@
 **Refs:** N/A
 
 ## [2025-10-04 18:30] Clear demo seed data and add open app control
+**Change Type:** Normal Change
+**Why:** Allow operators to populate the system with accurate records and expose a quick link to launched apps.
+**What changed:** Updated the Prisma seed to delete legacy demo entries without inserting new ones, refreshed the dashboard preview to highlight empty states and the new “Open App” action, and revised docs to reflect the clean-start workflow.
+**Impact:** Running the seed now removes the old Stable Diffusion demo; UI previews show zero preloaded apps/templates and surface the Open App control.
+**Testing:** `npm test`, `npm run build`
+**Docs:** README.md, docs/architecture-overview.md updated.
+**Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate placeholder assets.
+**Refs:** N/A
+
+## [2025-10-04 19:30] Add Docker orchestrator telemetry and settings persistence
 **Change Type:** Normal Change  
-**Why:** Allow operators to populate the system with accurate records and expose a quick link to launched apps.  
-**What changed:** Updated the Prisma seed to delete legacy demo entries without inserting new ones, refreshed the dashboard preview to highlight empty states and the new “Open App” action, and revised docs to reflect the clean-start workflow.  
-**Impact:** Running the seed now removes the old Stable Diffusion demo; UI previews show zero preloaded apps/templates and surface the Open App control.  
-**Testing:** `npm test`, `npm run build`  
-**Docs:** README.md, docs/architecture-overview.md updated.  
-**Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate placeholder assets.  
+**Why:** Provide database-backed container telemetry and configurable Open App URLs without relying on environment files.  
+**What changed:** Introduced a `DockerOrchestrator` service with tests, expanded the Prisma schema (AppSettings, DockerContainerState, openAppBaseUrl), added migrations/seeds, and updated docs plus README to describe telemetry, marketplace persistence, and the mini settings tab.  
+**Impact:** Requires running the new Prisma migration; telemetry and custom host links now persist in the database.  
+**Testing:** `npm test`  
+**Docs:** README.md, docs/architecture-overview.md, docs/configuration.md updated.  
+**Rollback Plan:** Revert the commit and roll back Prisma migration `20251004190000_add_docker_orchestrator`.  
 **Refs:** N/A

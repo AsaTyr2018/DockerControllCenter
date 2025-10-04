@@ -13,6 +13,11 @@ The Docker Control Center (DCC) relies on environment variables to orchestrate G
 | `DCC_LOG_LEVEL` | Logging verbosity (`info`, `debug`, etc.). | Increase temporarily for troubleshooting. |
 | `DATABASE_URL` | Prisma connection string. Defaults to SQLite under `/opt/dcc/data/dcc.sqlite`. | Point at PostgreSQL/MySQL for production or keep SQLite for embedded deployments. |
 
+## Database-backed Settings
+- Operator-facing preferences such as custom "Open App" hosts are persisted via Prisma (`AppSettings.openAppBaseUrl`).
+- Container telemetry snapshots (status, health, resource metrics) live in `DockerContainerState`, allowing the UI to render dashboards without referencing environment files.
+- Marketplace templates continue to live in the database (`MarketplaceTemplate`), keeping all runtime metadata centralized.
+
 ## File System Layout
 ```
 /opt/dockerstore/
@@ -44,4 +49,5 @@ The Docker Control Center (DCC) relies on environment variables to orchestrate G
 
 ## Observability
 - Forward container logs to centralized logging (ELK, Loki).
+- The `DockerOrchestrator` already polls Docker for lifecycle/health data; surface additional metrics by exporting the `DockerContainerState` table to Prometheus/Grafana if needed.
 - Emit metrics for container lifecycle events, GPU usage, and onboarding errors.
