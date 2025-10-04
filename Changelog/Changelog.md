@@ -99,11 +99,21 @@
 **Refs:** N/A
 
 ## [2025-10-05 12:00] Allow marketplace templates to deploy in the preview UI
-**Change Type:** Normal Change  
-**Why:** Operators could capture templates but not simulate installing them from the marketplace dialog.  
-**What changed:** Added a Deploy control that installs templates into a local fleet list, updated stats, and refreshed docs to describe the new preview behavior.  
-**Impact:** Installations are still local-storage simulations; no backend or database changes required.  
-**Testing:** `npm run build`, `npm test`  
-**Docs:** README.md, docs/architecture-overview.md updated.  
-**Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate assets.  
+**Change Type:** Normal Change
+**Why:** Operators could capture templates but not simulate installing them from the marketplace dialog.
+**What changed:** Added a Deploy control that installs templates into a local fleet list, updated stats, and refreshed docs to describe the new preview behavior.
+**Impact:** Installations are still local-storage simulations; no backend or database changes required.
+**Testing:** `npm run build`, `npm test`
+**Docs:** README.md, docs/architecture-overview.md updated.
+**Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate assets.
+**Refs:** N/A
+
+## [2025-10-05 15:30] Add lifecycle controls to the fleet table preview
+**Change Type:** Normal Change
+**Why:** Provide operators with simulated start/stop and maintenance actions while the backend API is under development.
+**What changed:** Replaced the fleet placeholder message with Start/Stop, Reinstall, and Deinstall buttons that update local app records and disable during installs; refreshed README guidance.
+**Impact:** Frontend-only simulation updates; no backend or database changes required.
+**Testing:** `npm run build`, `npm test`
+**Docs:** README.md updated.
+**Rollback Plan:** Revert the commit and rerun `npm run build` to regenerate assets.
 **Refs:** N/A

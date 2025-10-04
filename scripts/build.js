@@ -685,6 +685,7 @@ function writePlaceholderAssets() {
           const button = document.createElement('button');
           button.type = 'button';
           button.dataset.action = action;
+          button.title = label;
           button.innerHTML =
             '<svg viewBox="0 0 16 16" aria-hidden="true">' +
             '<path fill="currentColor" d="' +
@@ -695,6 +696,74 @@ function writePlaceholderAssets() {
             label +
             '</span>';
           return button;
+        };
+
+        const scheduleRunningTransition = (appId, delay = 900) => {
+          window.setTimeout(() => {
+            const current = loadApps();
+            const updated = current.map((item) =>
+              item.id === appId
+                ? { ...item, status: 'RUNNING', lastSeenAt: new Date().toISOString() }
+                : item
+            );
+            commitApps(updated);
+          }, delay);
+        };
+
+        const mutateAppRecord = (appId, mutator) => {
+          const index = apps.findIndex((item) => item.id === appId);
+          if (index < 0) return;
+          const current = apps[index];
+          const result = mutator(current, index, apps);
+          if (typeof result === 'undefined') {
+            return;
+          }
+          if (result === null) {
+            const next = [...apps.slice(0, index), ...apps.slice(index + 1)];
+            commitApps(next);
+            return;
+          }
+          if (result !== current) {
+            const next = [...apps];
+            next.splice(index, 1, result);
+            commitApps(next);
+          }
+        };
+
+        const startApp = (appId) => {
+          mutateAppRecord(appId, (app) => {
+            if (['RUNNING', 'STARTING'].includes(app.status)) {
+              return app;
+            }
+            const now = new Date().toISOString();
+            scheduleRunningTransition(appId);
+            return { ...app, status: 'STARTING', lastSeenAt: now };
+          });
+        };
+
+        const stopApp = (appId) => {
+          mutateAppRecord(appId, (app) => {
+            if (app.status !== 'RUNNING') {
+              return app;
+            }
+            const now = new Date().toISOString();
+            return { ...app, status: 'STOPPED', lastSeenAt: now };
+          });
+        };
+
+        const reinstallApp = (appId) => {
+          mutateAppRecord(appId, (app) => {
+            if (app.status === 'STARTING') {
+              return app;
+            }
+            const now = new Date().toISOString();
+            scheduleRunningTransition(appId);
+            return { ...app, status: 'STARTING', installedAt: now, lastSeenAt: now };
+          });
+        };
+
+        const uninstallApp = (appId) => {
+          mutateAppRecord(appId, () => null);
         };
 
         const renderTemplateOptions = (list) => {
@@ -751,6 +820,7 @@ function writePlaceholderAssets() {
           list.forEach((app) => {
             const row = document.createElement('tr');
             row.dataset.appRow = 'true';
+            row.dataset.appId = app.id;
 
             const nameCell = document.createElement('td');
             const nameLabel = document.createElement('strong');
@@ -774,10 +844,58 @@ function writePlaceholderAssets() {
 
             const actionsCell = document.createElement('td');
             actionsCell.className = 'table-actions';
-            const placeholder = document.createElement('span');
-            placeholder.className = 'table-hint';
-            placeholder.textContent = 'Lifecycle controls coming soon';
-            actionsCell.appendChild(placeholder);
+
+            const status = app.status || 'STOPPED';
+            const isStarting = status === 'STARTING';
+
+            const startStopConfig =
+              status === 'RUNNING'
+                ? {
+                    action: 'stop',
+                    label: 'Stop',
+                    icon: 'M5.5 3A1.5 1.5 0 0 0 4 4.5v7A1.5 1.5 0 0 0 5.5 13h5A1.5 1.5 0 0 0 12 11.5v-7A1.5 1.5 0 0 0 10.5 3h-5z'
+                  }
+                : {
+                    action: 'start',
+                    label: 'Start',
+                    icon:
+                      'M6.5 3.5a.5.5 0 0 1 .79-.407l5 3.5a.5.5 0 0 1 0 .814l-5 3.5A.5.5 0 0 1 6.5 10.5v-7zM5 3.5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0v-7z'
+                  };
+
+            const startStopButton = createActionButton(
+              startStopConfig.action,
+              startStopConfig.label,
+              startStopConfig.icon
+            );
+            if (isStarting) {
+              startStopButton.disabled = true;
+              const label = startStopButton.querySelector('span');
+              if (label) label.textContent = 'Starting…';
+            }
+
+            const reinstallButton = createActionButton(
+              'reinstall',
+              'Reinstall',
+              'M8 3a5 5 0 1 0 4.546 2.914.5.5 0 1 0-.894-.448A4 4 0 1 1 8 4a.5.5 0 0 0 0 1h3a.5.5 0 0 0 .5-.5V2a.5.5 0 0 0-1 0v.8A5 5 0 0 0 8 3z'
+            );
+            if (isStarting) {
+              reinstallButton.disabled = true;
+              const label = reinstallButton.querySelector('span');
+              if (label) label.textContent = 'Installing…';
+            }
+
+            const uninstallButton = createActionButton(
+              'uninstall',
+              'Deinstall',
+              'M5.5 5a.5.5 0 0 0-.5.5V11a.5.5 0 0 0 1 0V5.5A.5.5 0 0 0 5.5 5zm2.5.5a.5.5 0 0 1 1 0V11a.5.5 0 0 1-1 0V5.5zm3-.5a.5.5 0 0 1 .5.5V11a.5.5 0 0 1-1 0V5.5a.5.5 0 0 1 .5-.5zM4.118 2.5 4 3h8l-.118-.5H4.118zM2.5 3a.5.5 0 0 1 .5-.5h2.5L5.618 1.5A1 1 0 0 1 6.577 1h2.846a1 1 0 0 1 .959.5L10.5 2.5H13a.5.5 0 0 1 .5.5v.5a.5.5 0 0 1-.5.5h-.5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4H2.5a.5.5 0 0 1-.5-.5V3z'
+            );
+            if (isStarting) {
+              uninstallButton.disabled = true;
+            }
+
+            actionsCell.appendChild(startStopButton);
+            actionsCell.appendChild(reinstallButton);
+            actionsCell.appendChild(uninstallButton);
 
             row.appendChild(nameCell);
             row.appendChild(statusCell);
@@ -788,6 +906,36 @@ function writePlaceholderAssets() {
             fleetTableBody.appendChild(row);
           });
         };
+
+        if (fleetTableBody) {
+          fleetTableBody.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-action]');
+            if (!button) return;
+            const row = button.closest('[data-app-row]');
+            if (!row) return;
+            const appId = row.dataset.appId;
+            if (!appId) return;
+
+            event.preventDefault();
+
+            switch (button.dataset.action) {
+              case 'start':
+                startApp(appId);
+                break;
+              case 'stop':
+                stopApp(appId);
+                break;
+              case 'reinstall':
+                reinstallApp(appId);
+                break;
+              case 'uninstall':
+                uninstallApp(appId);
+                break;
+              default:
+                break;
+            }
+          });
+        }
 
         const renderStats = (appList, templateList) => {
           const running = appList.filter((app) => app.status === 'RUNNING').length;
